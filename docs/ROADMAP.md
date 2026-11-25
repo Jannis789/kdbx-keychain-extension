@@ -30,13 +30,14 @@ Kleine Überschneidungen sind ok (z. B. rclone-Setup parallel zu Phase 1), aber
 - **Akzeptanz erfüllt:** Unit-Tests grün; Open→Edit→Save→Open-Roundtrip;
   Keyfile-Pfad getestet (ohne .key → InvalidKey, mit → Zugriff).
 
-## Phase 2 — Dropbox-Layer + Desktop-Sync
-- OAuth PKCE im Extension-Kontext (App-Key via Build-Env), Token-Refresh,
-  fetch/put mit rev-Prüfung (ADR-005)
-- rclone: bisync systemd-user-Service in der nixos-configuration (Timer,
-  Konflikt-Log), Upload der Test-DB
-- **Akzeptanz:** Extension-Testbuild kann test.kdbx ziehen und zurückschreiben;
-  lokale Kopie bidirektional synced; Konfliktfall wird erkannt, nicht still überschrieben
+## Phase 2 — Dropbox-Layer + Desktop-Sync (Teil 1 ✅ Desktop, 2026-11-25)
+- [x] Dropbox-OAuth über App Console (Redirect-URI `http://localhost:53682/`,
+      Scopes files.metadata/content.read+write) — Token in `~/.config/rclone/rclone.conf` (600)
+- [x] rclone-bisync systemd-User-Service + 5min-Timer (nixcfg `modules/rclone-kdbx.nix`)
+- [x] test.kdbx hochgeladen → `dropbox:kdbx-keychain/test.kdbx`; erster Resync gelaufen
+- [ ] Extension-seitiger Dropbox-Adapter (`CloudPort`): OAuth-PKCE im Browser,
+      Token-Refresh, fetch/put mit rev-Prüfung (ADR-005) — nächster Schritt
+- **Akzeptanz (Desktop-Teil):** gsecrets ↔ Dropbox bidirektional aktiv (Timer)
 
 ## Phase 3 — Extension-MVP (Chrome zuerst)
 - Unlock-Screen (Passwort + optionale `.key`-Datei), Stay-open über
