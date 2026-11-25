@@ -61,5 +61,6 @@ Kleine Überschneidungen sind ok (z. B. rclone-Setup parallel zu Phase 1), aber
 ## Offene Entscheidungen (Veto möglich)
 - **D1** Pfade: `dropbox:kdbx-keychain/test.kdbx` ↔ `~/Cloud/kdbx-keychain/test.kdbx`
 - **D2** Chrome zuerst, Firefox direkt danach (eine Codebasis, ADR-001)
-- **D3** Bibliothek: kdbxweb (ADR-003)
+- **D3** Bibliothek: **✅ entschieden 2026-11-25: kdbxweb** statt keepass-rs
+  (Begründung: ADR-003; Rust→WASM-Parität, eine Toolchain, reifere Edit-API)
 - **D4** Stay-open endet mit Browser-Ende — kein Key auf Disk (ADR-004)

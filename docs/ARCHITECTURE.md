@@ -27,11 +27,21 @@ API-Differenzen. Ergebnis: zwei unabhängige Artefakte, keine Duplikation.
 - **Verworfen fürs MVP:** Native-Messaging-Host für die Extension (Setup-Aufwand
   auf jedem Browser-Profil, kein Mehrwert, solange gsecrets über rclone bedient wird).
 
-### ADR-003 — KDBX-Stack: kdbxweb (+ Argon2-WASM)
-kdbxweb (KeeWeb-Familie): KDBX 3/4, Argon2id, Keyfiles. Braucht CSP
-`wasm-unsafe-eval` (steht in beiden Manifesten). Alternativen (eigene
-KDBX-Implementierung, keepassxc via native messaging) verworfen: Aufwand
-bzw. externes Binär-Setup.
+### ADR-003 — KDBX-Stack: kdbxweb (+ Argon2-WASM) — **entschieden 2026-11-25**
+Gewählt: **kdbxweb** (KeeWeb-Familie). Verworfen: **keepass-rs** (Rust) und eigene
+Implementierung. Begründung:
+- Der Browser ist unsere Laufzeit: Rust würde nach WASM kompiliert — der
+  Geschwindigkeitsvorteil von Rust existiert dort nicht. Argon2 ist memory-hard,
+  die KDF kostet in beiden Welten gleich viel.
+- Eine Toolchain (TS + esbuild + vitest) statt zwei (Rust + wasm-pack + Glue-Code
+  + Typen + CI).
+- kdbxwebs Edit/Create-API ist produktivreift (KeeWeb): CRUD, Times, protected
+  fields, KDBX 3/4, Keyfiles — exakt unser Feature-Set.
+- keepass-rs bleibt die Wahl, falls später doch ein nativer Host/das CLI
+  dazukommt (ADR-002: fürs MVP verworfen).
+Details: Argon2 läuft in einem dedizierten Worker (nicht im UI-/SW-Thread);
+CSP `wasm-unsafe-eval` steht in beiden Manifesten. Austauschbarkeit gesichert:
+kdbxweb sitzt nur hinter dem `DatabasePort`-Interface (packages/core/src/types.ts).
 
 ### ADR-004 — Zugangs-Konzept „Always open“ und seine Grenze
 - **Extension:** nach dem Unlock liegt der abgeleitete Schlüssel ausschließlich
