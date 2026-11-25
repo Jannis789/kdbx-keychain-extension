@@ -2,9 +2,10 @@
   "manifest_version": 3,
   "name": "KDBX Keychain",
   "description": "KDBX-Passwort-Manager mit Dropbox-Sync, TOTP und Auto-Fill. GNOME-inspiriertes Design.",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "minimum_chrome_version": "116",
-  "background": { "service_worker": "background.js", "type": "module" },
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA2l5mdU3AKRy4BT/dqRU7MBHt3czzlhO1jGEJ91o84xtDeXn+9xl8HNSJBuHa1WElEUEn+ThKBkk4tRdig5lJYJwJzFmaYC2fW6LBwusvWsU9nykYS5MYU54GZPR3sJP0ClNXcuHBMOqGRYnl4no3KTMDhCLftZz0+0jguZNN0J3HD4Pmtir3WueOnWK9BKnI7ySYPDxCwN35W7Hdfsl+X2sBzM+1ev2paoDrCJl8YluCc7Qj/b3X5blMIA04nhBK0ZO1EbQsNOAm7YBEszfQ191bDelcQ6tCoM+x8SAZnK0HD7vHuuV5qbYllbfcuwShyhoSStuZhkq0vFPacBe1EQIDAQAB",
+  "background": { "service_worker": "background.js" },
   "action": {
     "default_title": "KDBX Keychain",
     "default_popup": "popup/index.html"
@@ -16,6 +17,9 @@
     "scripting",
     "contextMenus",
     "clipboardWrite",
+    "clipboardRead",
+    "identity",
+    "offscreen",
     "alarms"
   ],
   "host_permissions": ["<all_urls>"],

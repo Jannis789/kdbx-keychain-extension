@@ -4,8 +4,8 @@
   "version": "0.0.1",
   "type": "module",
   "description": "KDBX-Domänenlogik: open/save, CRUD, TOTP, URL-Matching. Basis: kdbxweb (ADR-003).",
-  "type": "module",
   "main": "src/index.ts",
+  "types": "src/index.ts",
   "dependencies": {
     "kdbxweb": "^2.1.1",
     "hash-wasm": "^4.13.0"

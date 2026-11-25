@@ -386,8 +386,14 @@ export class KdbxDatabase implements UnlockedDatabase {
     }
     if (patch.url !== undefined) F.set('URL', patch.url);
     if (patch.notes !== undefined) F.set('Notes', patch.notes);
-    if (patch.totp) {
-      F.set('otp', ns.ProtectedValue.fromString(buildOtpUri(patch.totp, patch.title ?? '')));
+    // Bewusst `'totp' in patch`: JSON-IPC (chrome.runtime) verwirft undefined-Keys,
+    // das Löschen läuft daher über ein explizit vorhandenes, leeres Feld.
+    if ('totp' in patch) {
+      if (patch.totp) {
+        F.set('otp', ns.ProtectedValue.fromString(buildOtpUri(patch.totp, patch.title ?? '')));
+      } else {
+        F.delete('otp');
+      }
       F.delete('TOTP Seed');
       F.delete('TOTP Settings');
     }

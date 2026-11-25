@@ -212,7 +212,8 @@ export class DropboxCloud implements CloudPort {
         'Dropbox-API-Arg': JSON.stringify(arg),
         'Content-Type': 'application/octet-stream',
       },
-      body: bytes,
+      // Kopie, damit .buffer exakt die Nutzdaten enthält (Views könnten größer sein)
+      body: bytes.slice().buffer as ArrayBuffer,
     });
     if (res.ok) {
       const meta = (await res.json()) as { rev?: string };

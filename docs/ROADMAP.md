@@ -40,14 +40,27 @@ Kleine Überschneidungen sind ok (z. B. rclone-Setup parallel zu Phase 1), aber
 - **Akzeptanz (Desktop-Teil):** gsecrets ↔ Dropbox bidirektional aktiv (Timer)
 
 ## Phase 3 — Extension-MVP (Chrome zuerst)
-- Unlock-Screen (Passwort + optionale `.key`-Datei), Stay-open über
-  `storage.session` (ADR-004), Auto-Lock-Timer
-- Popup (GNOME-Design): Suche, Eintrag-Detail, Copy mit Auto-Clear (ADR-009),
-  TOTP-Anzeige mit Countdown, Create/Edit/Delete, Sync-Status + Konflikt-Dialog
-- Auto-Fill v1: Content-Script-Heuristik + Kontextmenü + Shortcut (ADR-006)
-- Options-Seite: Auto-Lock-Minuten, Clipboard-Clear-Sekunden, Remote-Pfad
-- **Akzeptanz:** Login auf einer Demo-Seite füllen; CRUD landet in Dropbox und
-  (via rclone-Sync) in gsecrets
+- ✅ Unlock-Screen (Passwort + optionale `.key`-Datei), Stay-open über
+  `storage.session` (ADR-004), Auto-Lock-Timer (Vault-Service, 16 Unit-Tests)
+- ✅ Popup (GNOME-Design): Suche, Eintrag-Detail, Copy mit Auto-Clear (ADR-009,
+  Offscreen-Dokument + Alarm, vergleicht vor dem Löschen), TOTP mit Countdown,
+  Create/Edit/Delete (inkl. TOTP-Entfernen), Sync-Status + Konflikt-Dialog
+- ✅ Auto-Fill v1: Content-Script-Heuristik (pure getestet: Anker-Regel,
+  autocomplete-Priorität, Captcha-Negativliste) + Kontextmenü + Ctrl+Shift+L
+- ✅ Options-Seite: Auto-Lock-Minuten, Clipboard-Clear-Sekunden, Remote-Pfad,
+  Dropbox-Connect (PKCE via `chrome.identity`) + Refresh-Token-Import
+- ✅ Build: esbuild + Manifest-Transform für chrome/firefox; `__DROPBOX_APP_KEY__`
+  aus agenix-Env (`scripts/build-extension.sh`); Extension-ID gepinnt (public
+  key im Manifest) → stabile Redirect-URI; kdbxweb-UMD-Bundle mit
+  `crypto`-Stub + echter `@xmldom/xmldom` (SW hat keinen DOMParser);
+  Bundle-Smoke-Test (DB-Roundtrip im Browser-Zweig) grün; 77 Tests + tsc
+  strict sauber
+- ⏳ **Akzeptanz (live):** Extension in Chrome laden (`dist/chrome`), Demo-Login
+  (`scripts/serve-demo.sh` → http://127.0.0.1:8123) füllen; CRUD landet in
+  Dropbox und (via rclone-Sync) in gsecrets. Für PKCE-Connect einmalig die
+  Redirect-URI `https://giaekmmanecjlcpifjmleemimokmeoka.chromiumapp.org/`
+  in der Dropbox-App-Konsole ergänzen (alternativ Refresh-Token in Options
+  importieren).
 
 ## Phase 4 — Firefox-Build
 - Manifest-Transform (background.scripts statt service_worker),

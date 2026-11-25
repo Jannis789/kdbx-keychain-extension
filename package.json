@@ -1,7 +1,7 @@
 {
   "name": "kdbx-keychain",
   "private": true,
-  "version": "0.0.1",
+  "version": "0.1.0",
   "type": "module",
   "description": "KDBX-Passwort-Manager: GNOME Secrets + eigene Browser-Extension (Chrome/Firefox), Source of Truth auf Dropbox.",
   "workspaces": [
@@ -10,10 +10,15 @@
   ],
   "scripts": {
     "test": "vitest run",
-    "typecheck": "tsc --noEmit -p packages/core"
+    "typecheck": "tsc --noEmit -p packages/core && tsc --noEmit -p packages/extension",
+    "build": "node packages/extension/build.mjs all",
+    "build:chrome": "node packages/extension/build.mjs chrome",
+    "build:firefox": "node packages/extension/build.mjs firefox"
   },
   "devDependencies": {
+    "@types/chrome": "^0.3.8",
     "@types/node": "^24.0.0",
+    "esbuild": "^0.25.0",
     "typescript": "^5.6.0",
     "vitest": "^3.0.0"
   }

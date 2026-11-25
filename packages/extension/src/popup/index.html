@@ -7,19 +7,15 @@
   </head>
   <body>
     <header>
-      <h1>KDBX Keychain</h1>
-      <span id="lock-state" class="chip locked">gesperrt</span>
+      <h1><span class="logo">🔑</span> KDBX Keychain</h1>
+      <div class="header-actions">
+        <span id="lock-state" class="chip locked">gesperrt</span>
+        <button id="btn-lock" class="icon-btn" title="Sperren" hidden>🔒</button>
+        <button id="btn-options" class="icon-btn" title="Einstellungen">⚙</button>
+      </div>
     </header>
-
-    <!-- Design-Mock (Phase 0). Der Build (Phase 1/3) ersetzt popup.ts → popup.js. -->
-    <input id="search" type="search" placeholder="Suchen…" />
-    <ul id="entries"></ul>
-
-    <footer>
-      <button id="unlock" class="pill">Entsperren</button>
-      <button id="sync" class="icon-btn" title="Mit Dropbox synchronisieren">⟳</button>
-    </footer>
-
-    <script src="popup.ts" type="module"></script>
+    <main id="view"></main>
+    <div id="toast" class="toast" hidden></div>
+    <script src="popup.js"></script>
   </body>
 </html>

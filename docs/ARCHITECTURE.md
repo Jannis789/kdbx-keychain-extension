@@ -33,6 +33,11 @@ Implementierung. Begründung:
 - Der Browser ist unsere Laufzeit: Rust würde nach WASM kompiliert — der
   Geschwindigkeitsvorteil von Rust existiert dort nicht. Argon2 ist memory-hard,
   die KDF kostet in beiden Welten gleich viel.
+*Bundle-Notiz (Phase 3):* kdbxweb 2.x ist UMD mit Node-Externals — esbuild-Alias
+`crypto` → WebCrypto-Shim (`src/shims/crypto-shim.ts`; die Node-API-Pfade sind
+nur Fallback im Browser), `@xmldom/xmldom` wird als echtes Paket gebundelt,
+weil Service Worker keinen `DOMParser` haben. Verifiziert per Bundle-Smoke-Test
+(KDBX-Roundtrip im Browser-Zweig, `SMOKE OK`).
 - Eine Toolchain (TS + esbuild + vitest) statt zwei (Rust + wasm-pack + Glue-Code
   + Typen + CI).
 - kdbxwebs Edit/Create-API ist produktivreift (KeeWeb): CRUD, Times, protected
@@ -44,10 +49,13 @@ CSP `wasm-unsafe-eval` steht in beiden Manifesten. Austauschbarkeit gesichert:
 kdbxweb sitzt nur hinter dem `DatabasePort`-Interface (packages/core/src/types.ts).
 
 ### ADR-004 — Zugangs-Konzept „Always open“ und seine Grenze
-- **Extension:** nach dem Unlock liegt der abgeleitete Schlüssel ausschließlich
-  in `chrome.storage.session` (RAM, wird beim Browser-Ende verworfen). Das
+- **Extension:** nach dem Unlock liegen der abgeleitete Schlüssel (Passwort/
+  Keyfile) **und der verschlüsselte KDBX-Ciphertext** ausschließlich in
+  `chrome.storage.session` (RAM, wird beim Browser-Ende verworfen). Das
   überlebt Service-Worker-Neustarts → „stay open“ für die ganze Browser-Session.
-  Auto-Lock nach Inaktivität (Default 15 min, konfigurierbar).
+  Auf Disk (`storage.local`) liegt nur der **Ciphertext-Cache** (KDBX bleibt
+  AES-256/Argon2-geschützt) — nie Passwort, Keyfile oder abgeleiteter Key.
+  Auto-Lock nach Inaktivität (Default 15 min, konfigurierbar; `chrome.alarms`).
 - **Desktop:** gsecrets läuft dauerhaft (GNOME-Autostart) und hält die DB offen.
 - **Bewusst NICHT:** Master-Passwort oder abgeleiteter Key auf Disk
   (`storage.local`, Datei, Keyring). „Always open über Neustarts“ wäre nur damit
@@ -70,7 +78,13 @@ Eigener Content-Script-Ansatz statt iframe-Injection:
 
 ### ADR-007 — Keys & Secrets
 - In diesem Repo stehen **nur Platzhalter** (`__DROPBOX_APP_KEY__`), ersetzt beim
-  Build aus der agenix-entschlüsselten Env (`DROPBOX_APP_KEY`).
+  Build aus der agenix-entschlüsselten Env (`DROPBOX_APP_KEY`) — siehe
+  `scripts/build-extension.sh` (Quelle `/run/agenix/dropbox-keychain-env`).
+- **Chrome-ID gepinnt:** öffentlicher RSA-Key im Manifest (`key`-Feld — kein
+  Secret) → stabile Extension-ID `giaekmmanecjlcpifjmleemimokmeoka` →
+  OAuth-Redirect-URI `https://giaekmmanecjlcpifjmleemimokmeoka.chromiumapp.org/`
+  (einmalig in der Dropbox-App-Konsole eintragen). Fallback ohne App-Console-
+  Änderung: Refresh-Token in der Options-Seite importieren.
 - `nixos-configuration/secrets/dropbox-keychain-env.age` (Format: export-Zeilen):
   `DROPBOX_APP_KEY`, `DROPBOX_APP_SECRET`, `KDBX_TEST_PASSWORD`.
 - Die Test-kdbx liegt **nicht** im Repo; Passwort steht in agenix. Reale Datenbanken
@@ -85,6 +99,11 @@ RFC 6238 lokal. Steam-TOTP optional später.
 Kopieren von Passwort/Username/TOTP/Custom-Fields. Hintergrund-Alarm löscht die
 Zwischenablage nach N Sekunden (Default 20, konfigurierbar) — und nur, wenn sie
 noch unseren Wert enthält ( überschreibt keine fremden Inhalte).
+*Implementierung (Phase 3):* Offscreen-Dokument (`chrome.offscreen`,
+Reason CLIPBOARD) schreibt/liest die Zwischenablage; der Alarm vergleicht den
+Inhalt mit dem erwarteten Wert (RAM-only im SW) und löscht nur bei Identität.
+`chrome.alarms` unterhalb 1 Minute nur in Entpackten Extensions — im Release
+ist die effektive Mindestgranularität 60 s (dokumentierte Grenze).
 
 ### ADR-010 — Design: libadwaita-inspiriert
 Tokens statt Pixelkopie: Akzent `#3584e4`, Cards mit 12 px Radius, dunkles Scheme
