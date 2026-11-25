@@ -19,9 +19,10 @@ interface SubtleLike {
     keyUsages: string[],
   ): Promise<unknown>;
   sign(algorithm: string, key: unknown, data: Uint8Array): Promise<ArrayBuffer>;
+  digest(algorithm: string, data: Uint8Array): Promise<ArrayBuffer>;
 }
 
-function subtle(): SubtleLike {
+export function subtle(): SubtleLike {
   const c = (globalThis as { crypto?: { subtle?: SubtleLike } }).crypto?.subtle;
   if (!c) throw new Error('WebCrypto (crypto.subtle) ist in dieser Umgebung nicht verfügbar');
   return c;
