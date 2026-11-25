@@ -1,0 +1,17 @@
+# Build-Artefakte
+node_modules/
+dist/
+build/
+out/
+
+# Env & Secrets — NIE committen (ADR-007)
+.env
+.env.*
+*.local
+
+# KDBX-Datenbanken gehören nicht ins Repo (auch keine Test-DBs)
+*.kdbx
+*.kdbx.*
+
+# OS/Misc
+.DS_Store

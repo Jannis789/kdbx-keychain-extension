@@ -1,0 +1,11 @@
+{
+  "name": "kdbx-keychain",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "description": "KDBX-Passwort-Manager: GNOME Secrets + eigene Browser-Extension (Chrome/Firefox), Source of Truth auf Dropbox.",
+  "workspaces": [
+    "packages/core",
+    "packages/extension"
+  ]
+}

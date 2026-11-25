@@ -1,0 +1,7 @@
+{
+  "name": "@kdbx-keychain/extension",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "description": "Browser-Extension (Chrome MV3 + Firefox MV3). Build-Setup (esbuild + manifest-transform) folgt in Phase 1/3 (ADR-001)."
+}

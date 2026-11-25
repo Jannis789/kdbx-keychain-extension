@@ -1,0 +1,11 @@
+{
+  "name": "@kdbx-keychain/core",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "description": "KDBX-Domänenlogik: open/save, CRUD, TOTP, URL-Matching. Implementierung: Phase 1 (kdbxweb).",
+  "main": "src/index.ts",
+  "scripts": {
+    "test": "echo 'Phase 1: vitest' && exit 0"
+  }
+}
