@@ -6,7 +6,8 @@
   "browser_specific_settings": {
     "gecko": {
       "id": "kdbx-keychain@nix-dev.link",
-      "strict_min_version": "127.0"
+      "strict_min_version": "127.0",
+      "data_collection_permissions": { "required": ["none"] }
     }
   },
   "background": { "scripts": ["background.js"] },
@@ -22,10 +23,13 @@
     "contextMenus",
     "clipboardWrite",
     "clipboardRead",
-    "identity",
     "alarms"
   ],
-  "host_permissions": ["<all_urls>"],
+  "host_permissions": [
+    "https://api.dropboxapi.com/*",
+    "https://content.dropboxapi.com/*"
+  ],
+  "optional_host_permissions": ["<all_urls>"],
   "content_scripts": [
     {
       "matches": ["<all_urls>"],

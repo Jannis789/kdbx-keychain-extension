@@ -12,7 +12,11 @@ import type {
 } from '../shared/messages';
 import { armClipboardClear, copyToClipboard, setClipboardExpected } from './clipboard';
 import { connectDropboxPkce } from './oauth';
-import { getActiveTab, sendTabMessage } from './ports';
+import {
+  ensureContentScript,
+  getActiveTab,
+  sendTabMessage,
+} from './ports';
 import type { Vault } from './vault';
 
 function ok<T>(data: T): RuntimeResponse<T> {
@@ -22,7 +26,8 @@ function ok<T>(data: T): RuntimeResponse<T> {
 async function fillEntry(vault: Vault, entryId: string): Promise<{ filled: FillResult; title: string }> {
   const entry = await vault.getEntry(entryId);
   const tab = await getActiveTab();
-  if (!tab?.id) throw new Error('Kein aktiver Tab gefunden');
+  const tabId = tab?.id;
+  if (!tabId) throw new Error('Kein aktiver Tab gefunden');
   const fields = entry.fields;
   const totp = fields.totp ? (await vault.totpNow(entryId))?.code : undefined;
   const payload: RuntimeMessage = {
@@ -31,7 +36,8 @@ async function fillEntry(vault: Vault, entryId: string): Promise<{ filled: FillR
     ...(fields.password ? { password: fields.password } : {}),
     ...(totp ? { totp } : {}),
   };
-  const filled = await sendTabMessage<FillResult>(tab.id, payload);
+  await ensureContentScript(tabId);
+  const filled = await sendTabMessage<FillResult>(tabId, payload);
   return { filled, title: fields.title };
 }
 

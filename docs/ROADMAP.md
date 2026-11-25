@@ -62,10 +62,31 @@ Kleine Überschneidungen sind ok (z. B. rclone-Setup parallel zu Phase 1), aber
   in der Dropbox-App-Konsole ergänzen (alternativ Refresh-Token in Options
   importieren).
 
-## Phase 4 — Firefox-Build
-- Manifest-Transform (background.scripts statt service_worker),
-  `webextension-polyfill`, `storage.session`-Verifikation, Tests mit `web-ext run`
-- **Akzeptanz:** gleicher Feature-Stand wie Chrome, UI-Code unverändert
+## Phase 4 — Firefox-Build ✅ (Build + deklarativer Install, Live-Akzeptanz ⏳)
+- Manifest-Transform (background.scripts = Event-Page statt service_worker) ✅
+- Firefox-Kompatibilitäts-Layer ✅:
+  - Clipboard (ADR-009) ohne chrome.offscreen — Firefox-Event-Page hat ein DOM,
+    daher navigator.clipboard direkt (readText mit execCommand-Paste-Fallback)
+  - FILL-Injection via ensureContentScript() (scripting.executeScript): Firefox
+    MV3 injiziert Manifest-Content-Scripts erst nach Host-Permission-Grant;
+    activeTab (Popup/Kontextmenü/Shortcut) genügt — Idempotenz-Guard in content.ts
+  - Options-Seite: chrome.identity-Fallback (OAuth-Connect nur Chrome; Firefox
+    bekommt den Refresh-Token per Build-Injection, ADR-007)
+  - Manifest: identity-Permission entfernt, Dropbox-Host-Permissions verschlankt
+    (api/content.dropboxapi.com), <all_urls> → optional_host_permissions
+- **Deklarativer Install (nixos-configuration, hosts/jannis/home.nix):**
+  Firefox-Wrapper `extraPolicies` → `ExtensionSettings` (`force_installed`,
+  install_url file://<nix-store-XPI>, `allowed_permissions: ["<all_urls>"]`
+  grantet die optionalen Host-Permissions mit).
+- **Signatur-Zwang (empirisch verifiziert, FF 160):** Firefox-Release lehnt
+  unsignde XPIs per Policy ab (`ERROR_SIGNEDSTATE_REQUIRED` im about:policies-Errors-Tab).
+  → `scripts/sign-firefox.sh` signiert via AMO `web-ext sign --channel unlisted`
+  (self-distribution; AMO-API-Keys in agenix `amo-sign-env`), legt die signierte
+  XPI nach `packages/kdbx-keychain.xpi` im nixos-Repo — die Policy aktiviert sich
+  beim Rebuild automatisch (pathExists-Gate). AMO-Signierung ist der einzige
+  manuelle Schritt (Account + API-Keys), danach komplett deklarativ.
+- **Akzeptanz:** gleicher Feature-Stand wie Chrome, UI-Code unverändert; ⏳
+  Live-Test: Unlock am echten Tresor + Autofill nach dem ersten signierten Install
 
 ## Phase 5 — GNOME-Integration
 - gsecrets in nixos-configuration installieren (GNOME-Modul)

@@ -17,12 +17,20 @@ interface FillResult {
   totp: boolean;
 }
 
-chrome.runtime.onMessage.addListener((raw: unknown, _sender, sendResponse): boolean => {
-  const msg = raw as FillDomPayload | undefined;
-  if (msg?.type !== 'FILL_INTO_DOM') return false;
-  sendResponse(applyFill(msg));
-  return false;
-});
+// Idempotenz-Guard: ensureContentScript() (Background) kann das Script bei
+// erneutem Fill nochmal injizieren — doppelte Listener würden doppelt füllen.
+const injectGuard = globalThis as { __kdbxContentInjected?: boolean };
+if (!injectGuard.__kdbxContentInjected) {
+  injectGuard.__kdbxContentInjected = true;
+  chrome.runtime.onMessage.addListener(
+    (raw: unknown, _sender, sendResponse): boolean => {
+      const msg = raw as FillDomPayload | undefined;
+      if (msg?.type !== 'FILL_INTO_DOM') return false;
+      sendResponse(applyFill(msg));
+      return false;
+    },
+  );
+}
 
 function isVisible(el: HTMLInputElement): boolean {
   if (el.type === 'hidden' || el.disabled || el.readOnly) return false;

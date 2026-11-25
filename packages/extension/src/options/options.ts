@@ -95,7 +95,14 @@ $('btn-save').addEventListener('click', async () => {
     const snap = await callBackground<Snapshot>({ type: 'LOCK_STATE' });
     applySnapshot(snap);
     const uri = chrome.identity?.getRedirectURL?.() ?? '';
-    $('redirect-uri').textContent = uri || '(chrome.identity nicht verfügbar)';
+    $('redirect-uri').textContent = uri || '(Chrome-Redirect-URI nicht verfügbar)';
+    // Firefox: chrome.identity existiert nicht — Connect per PKCE ist dort
+    // nicht möglich (Refresh-Token kommt deklarativ per Build-Injection).
+    if (typeof chrome.identity?.launchWebAuthFlow !== 'function') {
+      ($('btn-connect') as HTMLButtonElement).hidden = true;
+      $('redirect-uri').textContent =
+        '(Firefox: Token per Build injiziert — kein OAuth-Flow nötig)';
+    }
   } catch (e) {
     toast(e instanceof Error ? e.message : String(e));
   }

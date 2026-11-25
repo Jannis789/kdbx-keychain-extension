@@ -35,15 +35,16 @@ const entryPoints = {
   'offscreen/clipboard': join(src, 'offscreen/clipboard.ts'),
 };
 
-const staticFiles = [
+const staticFiles = (name) => [
   ['popup/index.html', 'popup/index.html'],
   ['popup/style.css', 'popup/style.css'],
   ['options/index.html', 'options/index.html'],
-  ['offscreen/clipboard.html', 'offscreen/clipboard.html'],
+  // Offscreen-Dokument nur für Chrome (Firefox nutzt die Event-Page direkt)
+  ...(name === 'chrome' ? [['offscreen/clipboard.html', 'offscreen/clipboard.html']] : []),
 ];
 
-function copyStatic(out) {
-  for (const [from, to] of staticFiles) {
+function copyStatic(out, name) {
+  for (const [from, to] of staticFiles(name)) {
     const dest = join(out, to);
     mkdirSync(dirname(dest), { recursive: true });
     copyFileSync(join(src, from), dest);
@@ -86,6 +87,6 @@ for (const name of targets) {
     name === 'chrome' ? { service_worker: 'background.js' } : { scripts: ['background.js'] };
   writeFileSync(join(out, 'manifest.json'), JSON.stringify(manifest, null, 2));
 
-  copyStatic(out);
+  copyStatic(out, name);
   console.log(`✓ dist/${name} gebaut`);
 }

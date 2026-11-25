@@ -1,14 +1,12 @@
 /**
- * Clipboard via Offscreen-Dokument (ADR-009).
+ * Clipboard (ADR-009) — browsergetrennt:
  *
- * MV3-Service-Worker haben kein DOM — navigator.clipboard existiert dort
- * nicht zuverlässig. Chrome-Boardmittel ist das Offscreen-Dokument
- * (Reason: CLIPBOARD). Firefox (Phase 4) hat für sein Background-Dokument
- * einen anderen Weg → feature-detected.
+ *  Chrome (MV3 Service-Worker): kein DOM → Offscreen-Dokument (Reason: CLIPBOARD).
+ *  Firefox (MV3 Event-Page):    hat ein DOM → navigator.clipboard direkt.
  *
  * Auto-Clear ist zweifach abgesichert: der Background hält den erwarteten
- * Wert im RAM und das Offscreen-Dokument vergleicht vor dem Löschen den
- * tatsächlichen Clipboard-Inhalt — fremde Inhalte werden nie überschrieben.
+ * Wert nur im RAM und der jeweilige Clipboard-Pfad vergleicht vor dem
+ * Löschen den tatsächlichen Inhalt — fremde Inhalte werden nie überschrieben.
  */
 import type { OffscreenMessage } from '../shared/messages';
 import { chromeAlarms } from './ports';
@@ -23,10 +21,17 @@ function wrap<T>(fn: (cb: (result: T) => void) => void): Promise<T> {
   return new Promise((resolve) => fn((result) => resolve(result)));
 }
 
+/** Chrome-MV3-Pfad verfügbar? (Firefox: Event-Page ohne chrome.offscreen) */
+function hasOffscreen(): boolean {
+  return (
+    typeof chrome.offscreen !== 'undefined' &&
+    typeof chrome.runtime.getContexts === 'function'
+  );
+}
+
 async function ensureOffscreen(): Promise<void> {
   if (typeof chrome.offscreen === 'undefined') {
-    // Firefox/Event-Page-Fallback: Phase 4, bis dahin kein Clipboard im Hintergrund.
-    throw new Error('offscreen-API nicht verfügbar (Firefox folgt in Phase 4)');
+    throw new Error('offscreen-API nicht verfügbar');
   }
   if (creating) return creating;
   creating = (async () => {
@@ -67,6 +72,34 @@ async function sendToOffscreen<T>(message: OffscreenMessage): Promise<T | undefi
   );
 }
 
+// ---------- Firefox: direkter Clipboard-Zugriff aus der Event-Page ----------
+
+async function writeDirect(text: string): Promise<void> {
+  await navigator.clipboard.writeText(text);
+}
+
+async function readDirect(): Promise<string> {
+  try {
+    return await navigator.clipboard.readText();
+  } catch {
+    // execCommand-Paste-Fallback (Extension-Page + clipboardRead-Permission)
+    const ta = document.createElement('textarea');
+    ta.setAttribute('aria-hidden', 'true');
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.focus();
+    try {
+      document.execCommand('paste');
+      return ta.value;
+    } finally {
+      ta.remove();
+    }
+  }
+}
+
+// ---------- Öffentliche API ----------
+
 /** Erwarteten Clipboard-Inhalt merken (nur RAM — stirbt mit dem SW). */
 let clipboardExpected: string | null = null;
 
@@ -75,18 +108,32 @@ export function setClipboardExpected(value: string): void {
 }
 
 export async function copyToClipboard(text: string): Promise<void> {
-  await sendToOffscreen<{ done: boolean }>({ type: 'CLIPBOARD_WRITE', text });
+  if (hasOffscreen()) {
+    await sendToOffscreen<{ done: boolean }>({ type: 'CLIPBOARD_WRITE', text });
+  } else {
+    await writeDirect(text);
+  }
 }
 
 export async function clearClipboardIfExpected(): Promise<boolean> {
   const expected = clipboardExpected;
   clipboardExpected = null;
   if (!expected) return false;
-  const res = await sendToOffscreen<{ cleared: boolean }>({
-    type: 'CLIPBOARD_CLEAR_IF_SAME',
-    expected,
-  });
-  return res?.cleared === true;
+  if (hasOffscreen()) {
+    const res = await sendToOffscreen<{ cleared: boolean }>({
+      type: 'CLIPBOARD_CLEAR_IF_SAME',
+      expected,
+    });
+    return res?.cleared === true;
+  }
+  try {
+    const current = await readDirect();
+    if (current !== expected) return false;
+    await writeDirect('');
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export async function armClipboardClear(seconds: number): Promise<void> {

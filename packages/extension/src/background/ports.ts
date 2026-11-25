@@ -51,3 +51,26 @@ export async function sendTabMessage<T>(tabId: number, message: unknown): Promis
   }));
   return res as T;
 }
+
+/**
+ * Stellt sicher, dass content.js im Tab vorhanden ist.
+ *
+ * Firefox MV3 injiziert Manifest-Content-Scripts erst, sobald Host-Permissions
+ * gewährt sind — mit activeTab (User-Intent: Popup/Kontextmenü/Shortcut) können
+ * wir dennoch injecten. Idempotent dank Guard in content.ts; Fehler (z. B.
+ * geschützte Seite, kein activeTab) werden bewusst ignoriert — der folgende
+ * sendMessage liefert dann die benutzerfreundliche Meldung.
+ */
+export async function ensureContentScript(tabId: number): Promise<void> {
+  if (typeof chrome.scripting?.executeScript !== 'function') return;
+  try {
+    await wrap<unknown>((cb) =>
+      chrome.scripting.executeScript({ target: { tabId }, files: ['content.js'] }, (r) => {
+        void chrome.runtime.lastError; // ignorieren — siehe oben
+        cb(r);
+      }),
+    );
+  } catch {
+    // siehe oben — sendMessage liefert die aussagekräftige Fehlermeldung
+  }
+}
