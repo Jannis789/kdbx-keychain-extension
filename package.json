@@ -7,5 +7,14 @@
   "workspaces": [
     "packages/core",
     "packages/extension"
-  ]
+  ],
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit -p packages/core"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "^5.6.0",
+    "vitest": "^3.0.0"
+  }
 }

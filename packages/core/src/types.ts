@@ -69,13 +69,13 @@ export interface UnlockedDatabase {
   /** eTLD+1-Heuristik fürs Auto-Fill (ADR-006). */
   matchUrl(url: string): KeychainEntry[];
   totp(id: string): TotpConfig | null;
-  /** RFC 6238: aktueller Code + Restlaufzeit fürs UI. */
-  totpNow(id: string): { code: string; remainingSeconds: number } | null;
+  /** RFC 6238: aktueller Code + Restlaufzeit fürs UI (WebCrypto → async). */
+  totpNow(id: string): Promise<{ code: string; remainingSeconds: number } | null>;
   create(fields: EntryFields, groupId?: string): KeychainEntry;
   update(id: string, patch: Partial<EntryFields>): KeychainEntry;
   remove(id: string): void;
-  /** Neu verschlüsseln und als KDBX-Bytes ausgeben. */
-  serialize(): Uint8Array;
+  /** Neu verschlüsseln und als KDBX-Bytes ausgeben (KDF/Argon2 → async). */
+  serialize(): Promise<Uint8Array>;
 }
 
 // ---------- Cloud (Dropbox) ----------

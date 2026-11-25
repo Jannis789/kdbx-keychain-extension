@@ -15,12 +15,20 @@ Kleine Überschneidungen sind ok (z. B. rclone-Setup parallel zu Phase 1), aber
       `~/.config/rclone/rclone.conf` (chmod 600); danach Upload nach
       `dropbox:kdbx-keychain/test.kdbx`
 
-## Phase 1 — Core-Bibliothek (`packages/core`)
-- kdbxweb + Argon2-WASM-Setup; `open` (Passwort **und** `.key`-Datei),
-  list/search/matchUrl, create/update/remove, serialize
-- TOTP-Parser (`otp://` + Legacy-Felder) + RFC-6238-Generator
-- Test-Fixtures werden **in den Tests programmatisch erzeugt** (kein `.kdbx` im Git)
-- **Akzeptanz:** Unit-Tests grün; Open→Edit→Save→Open-Roundtrip; Keyfile-Pfad getestet
+## Phase 1 — Core-Bibliothek (`packages/core`) ✅ (2026-11-25)
+- [x] kdbxweb + **hash-wasm** als Argon2 (reines WASM, identisch in Node-Tests
+      und Browser-Bundle; via `CryptoEngine.setArgon2Impl`-Hook)
+- [x] `open` (Passwort **und** `.key`-Datei), list/search/matchUrl,
+      create/update/remove, serialize
+- [x] TOTP-Parser (`otp://` + Legacy-Felder) + RFC-6238-Generator
+- [x] Test-Fixtures werden **in den Tests programmatisch erzeugt** (kein `.kdbx` im Git)
+- **Ergebnis:** 37/37 Tests grün, `tsc --noEmit` sauber. Cross-Writer-Check:
+  die pykeepass-erzeugte Test-DB (Argon2id) öffnet und liest sich sauber via
+  kdbxweb → Kompatibilität mit GNOME-Secrets-tauglichen KDBX4-Dateien bestätigt.
+  SHA256/512-TOTP-Vektoren gegen pyotp referenziert (publizierte RFC-Anhang-B-
+  Werte ab T=1111111109 sind als inkonsistent dokumentiert — im Test vermerkt).
+- **Akzeptanz erfüllt:** Unit-Tests grün; Open→Edit→Save→Open-Roundtrip;
+  Keyfile-Pfad getestet (ohne .key → InvalidKey, mit → Zugriff).
 
 ## Phase 2 — Dropbox-Layer + Desktop-Sync
 - OAuth PKCE im Extension-Kontext (App-Key via Build-Env), Token-Refresh,
