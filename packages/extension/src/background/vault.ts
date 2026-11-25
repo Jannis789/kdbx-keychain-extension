@@ -24,6 +24,7 @@ import type {
   UnlockedDatabase,
 } from '@kdbx-keychain/core';
 import { decodeBase64, encodeBase64 } from '../shared/base64';
+import { BUILD_REFRESH_TOKEN } from '../shared/build-defaults';
 import type { CopyableField, Snapshot, SyncInfo, TotpInfo } from '../shared/messages';
 import { DEFAULT_SETTINGS, mergeSettings, type Settings } from '../shared/settings';
 
@@ -131,6 +132,12 @@ export class Vault {
     this.rev = typeof rev === 'string' ? rev : '';
     const token = await this.deps.local.get(KEY.token);
     this.refreshToken = typeof token === 'string' ? token : '';
+    // Build-Seed (ADR-007): noch nie verbunden + Token im Bundle injiziert
+    // → Dropobox-Verbindung ist ab Erst-Build da, ohne manuellen Import.
+    if (!this.refreshToken && BUILD_REFRESH_TOKEN) {
+      this.refreshToken = BUILD_REFRESH_TOKEN;
+      await this.deps.local.set(KEY.token, this.refreshToken);
+    }
     const lastSync = await this.deps.local.get(KEY.lastSync);
     this.lastSyncAt = typeof lastSync === 'number' ? lastSync : null;
     this.dirty = (await this.deps.local.get(KEY.dirty)) === true;

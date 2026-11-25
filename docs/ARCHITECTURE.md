@@ -85,6 +85,13 @@ Eigener Content-Script-Ansatz statt iframe-Injection:
   OAuth-Redirect-URI `https://giaekmmanecjlcpifjmleemimokmeoka.chromiumapp.org/`
   (einmalig in der Dropbox-App-Konsole eintragen). Fallback ohne App-Console-
   Änderung: Refresh-Token in der Options-Seite importieren.
+- **Build-Defaults (Phase 3, deklaratives Setup):** aus derselben agenix-Env
+  werden zusätzlich `DEFAULT_REMOTE_PATH` (Ziel-Tresor) und optional
+  `DROPBOX_REFRESH_TOKEN` injiziert (`src/shared/build-defaults.ts`). Damit
+  ist die Extension nach dem Laden vorkonfiguriert: Pfad gesetzt, Dropbox
+  verbunden — es bleibt nur Master-Passwort + Keyfile (bewusst NICHT
+  injizierbar, ADR-004). Der Token liegt nur im lokalen `dist/`-Artefakt
+  (gitignored), nie im Repo.
 - `nixos-configuration/secrets/dropbox-keychain-env.age` (Format: export-Zeilen):
   `DROPBOX_APP_KEY`, `DROPBOX_APP_SECRET`, `KDBX_TEST_PASSWORD`.
 - Die Test-kdbx liegt **nicht** im Repo; Passwort steht in agenix. Reale Datenbanken
