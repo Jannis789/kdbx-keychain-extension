@@ -78,6 +78,13 @@ Kleine Überschneidungen sind ok (z. B. rclone-Setup parallel zu Phase 1), aber
   Firefox-Wrapper `extraPolicies` → `ExtensionSettings` (`force_installed`,
   install_url file://<nix-store-XPI>, `allowed_permissions: ["<all_urls>"]`
   grantet die optionalen Host-Permissions mit).
+- **DEV-Weg ohne Signierung (aktiv):** Firefox Dev Edition (nixpkgs
+  `firefox-devedition-bin`) akzeptiert unsignde XPIs mit explizitem
+  `pref("xpinstall.signatures.required", false)` (extraPrefs) — empirisch
+  verifiziert (`signedState: 0, active: true`). Policy zeigt auf die
+  Workspace-XPI mit stabilem Namen (`dist/firefox/kdbx-keychain-dev.xpi`);
+  Dev-Loop: `scripts/dev-install.sh` → Dev-Browser neu starten (Policy
+  reinstalliert bei Dateiänderung). Release-Firefox bleibt blockiert.
 - **Signatur-Zwang (empirisch verifiziert, FF 160):** Firefox-Release lehnt
   unsignde XPIs per Policy ab (`ERROR_SIGNEDSTATE_REQUIRED` im about:policies-Errors-Tab).
   → `scripts/sign-firefox.sh` signiert via AMO `web-ext sign --channel unlisted`
