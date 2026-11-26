@@ -18,6 +18,7 @@
     "contextMenus",
     "clipboardWrite",
     "clipboardRead",
+    "nativeMessaging",
     "identity",
     "offscreen",
     "alarms"

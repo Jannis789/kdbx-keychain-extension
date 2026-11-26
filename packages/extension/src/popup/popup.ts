@@ -204,6 +204,8 @@ function renderLocked(): void {
       if (file) {
         const buf = await file.arrayBuffer();
         keyFileBase64 = encodeBase64(new Uint8Array(buf));
+      } else if (prefilledKeyB64) {
+        keyFileBase64 = prefilledKeyB64;
       }
       state.snapshot = await callBackground<Snapshot>({
         type: 'UNLOCK',
@@ -219,6 +221,20 @@ function renderLocked(): void {
       unlockBtn.disabled = false;
     }
   }
+
+  // ADR-010: Keyfile vorab über den Native-Messaging-Host ziehen (agenix).
+  // Scheitert es, bleibt die manuelle Dateiauswahl der Weg.
+  let prefilledKeyB64: string | undefined;
+  void callBackground<{ b64?: string; source?: string }>({ type: 'PREFILL_KEYFILE' })
+    .then((res) => {
+      if (res.b64) {
+        prefilledKeyB64 = res.b64;
+        keyName.textContent = 'vorausgefüllt (agenix)';
+      }
+    })
+    .catch(() => {
+      // Host fehlt → Dateiauswahl bleibt
+    });
 
   card.append(
     h('h2', {}, 'Tresor entsperren'),

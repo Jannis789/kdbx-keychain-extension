@@ -35,6 +35,7 @@ export type TotpInfo = { code: string; remainingSeconds: number };
 
 export type RuntimeMessage =
   | { type: 'UNLOCK'; password: string; keyFileBase64?: string }
+  | { type: 'PREFILL_KEYFILE' }
   | { type: 'LOCK' }
   | { type: 'LOCK_STATE' }
   | { type: 'LIST'; query?: string }

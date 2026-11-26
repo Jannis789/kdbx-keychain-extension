@@ -12,6 +12,7 @@ import type {
 } from '../shared/messages';
 import { armClipboardClear, copyToClipboard, setClipboardExpected } from './clipboard';
 import { connectDropboxPkce } from './oauth';
+import { fetchKeyfileViaNative } from './native';
 import {
   ensureContentScript,
   getActiveTab,
@@ -101,6 +102,12 @@ export function createRouter(vault: Vault): Route {
         case 'FILL':
           await vault.touch();
           return ok(await fillEntry(vault, message.entryId));
+        case 'PREFILL_KEYFILE': {
+          // ADR-010: Keyfile-Bytes aus dem Native-Host (agenix) — weiches
+          // Fallback: kein Host → leeres Objekt → Popup nutzt Dateiauswahl.
+          const { b64 } = await fetchKeyfileViaNative();
+          return ok(b64 ? { b64, source: 'native' } : {});
+        }
         case 'CREATE_ENTRY': {
           const entry = await vault.createEntry(message.fields as EntryFields);
           return ok({ entry, snapshot: await vault.snapshot() });

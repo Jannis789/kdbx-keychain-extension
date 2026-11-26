@@ -23,6 +23,7 @@
     "contextMenus",
     "clipboardWrite",
     "clipboardRead",
+    "nativeMessaging",
     "alarms"
   ],
   "host_permissions": [
