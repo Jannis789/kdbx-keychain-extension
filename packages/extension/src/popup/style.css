@@ -1,4 +1,10 @@
 /* libadwaita-inspirierte Tokens (ADR-010): Freiheiten erlaubt, GNOME-Haptik bleibt. */
+/* hidden-Attribut ist authoritative: Autoren-CSS (z.B. .banner { display:flex })
+   würde sonst das UA-Verstecken ([hidden] { display:none }) überschreiben. */
+[hidden] {
+  display: none !important;
+}
+
 :root {
   --bg: #f6f5f4;
   --card: #ffffff;
