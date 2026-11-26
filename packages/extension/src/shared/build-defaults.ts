@@ -19,3 +19,8 @@ export const BUILD_DEFAULT_REMOTE_PATH: string | null = injected(
 export const BUILD_REFRESH_TOKEN: string | null = injected(
   typeof __DROPBOX_REFRESH_TOKEN__ === 'undefined' ? undefined : __DROPBOX_REFRESH_TOKEN__,
 );
+
+/** Dropbox-App-Secret (ADR-007-Amendment: nötig für den refresh-Grant). */
+export const BUILD_APP_SECRET: string | null = injected(
+  typeof __DROPBOX_APP_SECRET__ === 'undefined' ? undefined : __DROPBOX_APP_SECRET__,
+);

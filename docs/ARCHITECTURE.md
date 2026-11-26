@@ -76,10 +76,15 @@ Eigener Content-Script-Ansatz statt iframe-Injection:
 3. Bedienwege: Kontextmenü auf Eingabefeldern, Shortcut (Ctrl+Shift+L), Popup.
 4. Local-first: kein Scanning ohne User-Intent.
 
-### ADR-007 — Keys & Secrets
+### ADR-007 — Keys & Secrets (Amendment 2026-11-26: App-Secret)
 - In diesem Repo stehen **nur Platzhalter** (`__DROPBOX_APP_KEY__`), ersetzt beim
   Build aus der agenix-entschlüsselten Env (`DROPBOX_APP_KEY`) — siehe
   `scripts/build-extension.sh` (Quelle `/run/agenix/dropbox-keychain-env`).
+- **Amendment:** `DROPBOX_APP_SECRET` wird inzwischen ebenfalls injiziert und
+  beim `refresh_token`-Grant mitgesendet. Grund: unsere Dropbox-App ist
+  confidential — der Grant verlangt client_secret zwingend (empirisch: ohne
+  Secret → HTTP 400 „No auth function available", mit → 200). Das Secret liegt
+  bereits in agenix und landet nur im lokalen, git-ignoreden dist/-Artefakt.
 - **Chrome-ID gepinnt:** öffentlicher RSA-Key im Manifest (`key`-Feld — kein
   Secret) → stabile Extension-ID `giaekmmanecjlcpifjmleemimokmeoka` →
   OAuth-Redirect-URI `https://giaekmmanecjlcpifjmleemimokmeoka.chromiumapp.org/`

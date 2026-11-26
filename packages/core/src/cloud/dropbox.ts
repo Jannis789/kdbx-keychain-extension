@@ -116,6 +116,12 @@ export async function exchangeCode(opts: {
 
 export interface DropboxOptions {
   appKey: string;
+  /**
+   * Dropbox-App-Secret (ADR-007-Amendment): Confidential Apps verlangen beim
+   * refresh_token-Grant zwingend client_secret (empirisch: ohne Secret →
+   * 400 "No auth function available"). Optional für reine PKCE-Apps.
+   */
+  appSecret?: string;
   /** Refresh-Token (kann bei Rotation aktualisiert werden). */
   refreshToken: string;
   /** Wird nach jedem Refresh informiert — hier den Token persistieren! */
@@ -149,6 +155,7 @@ export class DropboxCloud implements CloudPort {
         grant_type: 'refresh_token',
         refresh_token: this.opts.refreshToken,
         client_id: this.opts.appKey,
+        ...(this.opts.appSecret ? { client_secret: this.opts.appSecret } : {}),
       }),
     });
     const tokens = await readTokenResponse(res);

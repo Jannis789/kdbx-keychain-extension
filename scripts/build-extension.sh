@@ -11,6 +11,7 @@ if [[ -r /run/agenix/dropbox-keychain-env ]]; then
 fi
 
 export DROPBOX_APP_KEY="${DROPBOX_APP_KEY:-}"
+export DROPBOX_APP_SECRET="${DROPBOX_APP_SECRET:-}"
 if [[ -z "$DROPBOX_APP_KEY" ]]; then
   echo "⚠  DROPBOX_APP_KEY leer — baue mit Placeholder (ADR-007)." >&2
 fi

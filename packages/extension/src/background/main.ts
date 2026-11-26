@@ -7,13 +7,14 @@ import { AUTO_LOCK_ALARM, Vault, type CloudFactory } from './vault';
 import { CLIPBOARD_CLEAR_ALARM, clearClipboardIfExpected } from './clipboard';
 import { chromeAlarms, chromeKV } from './ports';
 import { createRouter, matchAndFillActiveTab } from './router';
-import { hasAppKey, APP_KEY } from './app-key';
+import { hasAppKey, APP_KEY, APP_SECRET } from './app-key';
 import type { RuntimeMessage } from '../shared/messages';
 
 const cloudFactory: CloudFactory = ({ refreshToken, onTokenRefreshed }) => {
   if (!hasAppKey()) return null;
   return new DropboxCloud({
     appKey: APP_KEY,
+    ...(APP_SECRET ? { appSecret: APP_SECRET } : {}),
     refreshToken,
     onTokenRefreshed: (t) => onTokenRefreshed(t.refreshToken),
   });

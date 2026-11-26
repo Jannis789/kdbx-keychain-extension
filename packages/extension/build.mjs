@@ -21,6 +21,7 @@ const APP_KEY = process.env.DROPBOX_APP_KEY ?? '';
 if (!APP_KEY || APP_KEY.startsWith('__')) {
   console.warn('⚠  Kein DROPBOX_APP_KEY gesetzt — Placeholder bleibt im Bundle (ADR-007).');
 }
+const APP_SECRET = process.env.DROPBOX_APP_SECRET ?? '';
 const REMOTE_PATH = process.env.DEFAULT_REMOTE_PATH ?? '';
 const REFRESH_TOKEN = process.env.DROPBOX_REFRESH_TOKEN ?? '';
 
@@ -74,6 +75,7 @@ for (const name of targets) {
     },
     define: {
       __DROPBOX_APP_KEY__: JSON.stringify(APP_KEY),
+      __DROPBOX_APP_SECRET__: JSON.stringify(APP_SECRET),
       __DEFAULT_REMOTE_PATH__: JSON.stringify(REMOTE_PATH),
       __DROPBOX_REFRESH_TOKEN__: JSON.stringify(REFRESH_TOKEN),
       'process.env.NODE_ENV': JSON.stringify('production'),
