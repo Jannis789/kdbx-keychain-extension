@@ -7,15 +7,25 @@
     "gecko": {
       "id": "kdbx-keychain@nix-dev.link",
       "strict_min_version": "127.0",
-      "data_collection_permissions": { "required": ["none"] }
+      "data_collection_permissions": {
+        "required": [
+          "none"
+        ]
+      }
     }
   },
-  "background": { "scripts": ["background.js"] },
+  "background": {
+    "scripts": [
+      "background.js"
+    ]
+  },
   "action": {
     "default_title": "KDBX Keychain",
     "default_popup": "popup/index.html"
   },
-  "options_ui": { "page": "options/index.html" },
+  "options_ui": {
+    "page": "options/index.html"
+  },
   "permissions": [
     "storage",
     "activeTab",
@@ -30,19 +40,30 @@
     "https://api.dropboxapi.com/*",
     "https://content.dropboxapi.com/*"
   ],
-  "optional_host_permissions": ["<all_urls>"],
+  "optional_host_permissions": [
+    "<all_urls>"
+  ],
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
-      "js": ["content.js"],
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "content.js"
+      ],
       "all_frames": true,
       "run_at": "document_idle"
     }
   ],
   "commands": {
     "fill-current-tab": {
-      "suggested_key": { "default": "Ctrl+Shift+L" },
+      "suggested_key": {
+        "default": "Ctrl+Shift+L"
+      },
       "description": "Eintrag für aktuelle Seite suchen und ausfüllen"
     }
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
   }
 }
