@@ -6,18 +6,31 @@
  *
  * Chrome (Service Worker) und Firefox (Event-Page) verstehen beide
  * chrome.runtime.connectNative — der Fehlerfall ist bewusst weich:
- * kein Host → null → Popup fällt auf manuelle Dateiauswahl zurück.
+ * kein Host → b64:null, aber die Ursache wird als error durchgereicht,
+ * damit der Popup sie sichtbar machen kann (Diagnose statt Stille).
  */
 const HOST_NAME = 'kdbx_keychain_keyfile';
 
 export interface NativeKeyfile {
   b64: string | null;
+  error?: string;
+}
+
+function lastErrorText(): string | undefined {
+  try {
+    return chrome.runtime.lastError?.message || undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 export function fetchKeyfileViaNative(timeoutMs = 3000): Promise<NativeKeyfile> {
   return new Promise((resolve) => {
+    let settled = false;
     let port: chrome.runtime.Port | null = null;
     const done = (r: NativeKeyfile): void => {
+      if (settled) return;
+      settled = true;
       clearTimeout(timer);
       try {
         port?.disconnect();
@@ -26,23 +39,24 @@ export function fetchKeyfileViaNative(timeoutMs = 3000): Promise<NativeKeyfile> 
       }
       resolve(r);
     };
-    const timer = setTimeout(() => done({ b64: null }), timeoutMs);
+    const timer = setTimeout(() => done({ b64: null, error: 'timeout' }), timeoutMs);
     try {
       port = chrome.runtime.connectNative(HOST_NAME);
-    } catch {
-      done({ b64: null });
+    } catch (e) {
+      done({ b64: null, error: `connect: ${(e as Error).message}` });
       return;
     }
     port.onMessage.addListener((msg: { ok?: boolean; b64?: string }) => {
       if (msg?.ok && typeof msg.b64 === 'string' && msg.b64 !== '') {
         done({ b64: msg.b64 });
       } else {
-        done({ b64: null });
+        done({ b64: null, error: 'host antwortete ohne Keyfile' });
       }
     });
     port.onDisconnect.addListener(() => {
-      void chrome.runtime.lastError; // bewusst konsumieren (Fehlertext egal)
-      done({ b64: null });
+      const le = lastErrorText();
+      // settled-Guard: nach erfolgreicher onMessage-Antwort ist done schon gelaufen
+      done({ b64: null, error: le ? `disconnect: ${le}` : 'disconnect ohne lastError' });
     });
     port.postMessage({ type: 'getKeyfile' });
   });

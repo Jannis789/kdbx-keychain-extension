@@ -221,7 +221,9 @@ function renderLocked(): void {
       const msg = e instanceof Error ? e.message : String(e);
       errBox.textContent =
         keyFileBase64 === undefined && msg.includes('InvalidKey')
-          ? 'Entsperren fehlgeschlagen — Keyfile fehlte (s. Feld unten). ' + msg
+          ? 'Entsperren fehlgeschlagen — Keyfile fehlte (s. Feld unten). ' +
+            (nativeKeyError ? `(native: ${nativeKeyError}) ` : '') +
+            msg
           : 'Entsperren fehlgeschlagen — Passwort/Keyfile falsch? ' + msg;
       errBox.hidden = false;
     } finally {
@@ -232,17 +234,28 @@ function renderLocked(): void {
   // ADR-010: Keyfile vorab über den Native-Messaging-Host ziehen (agenix).
   // Scheitert es, bleibt die manuelle Dateiauswahl der Weg.
   let prefilledKeyB64: string | undefined;
-  const prefillPromise: Promise<unknown> = callBackground<{ b64?: string; source?: string }>({
+  let nativeKeyError: string | undefined;
+  const prefillPromise: Promise<unknown> = callBackground<{
+    b64?: string;
+    source?: string;
+    error?: string;
+  }>({
     type: 'PREFILL_KEYFILE',
   })
     .then((res) => {
       if (res.b64) {
         prefilledKeyB64 = res.b64;
         keyName.textContent = 'vorausgefüllt (agenix)';
+      } else if (res.error) {
+        nativeKeyError = res.error;
+        keyName.textContent = 'Keyfile nicht verfügbar (native)';
+        keyName.title = res.error;
       }
     })
-    .catch(() => {
-      // Host fehlt → Dateiauswahl bleibt
+    .catch((e: unknown) => {
+      nativeKeyError = e instanceof Error ? e.message : String(e);
+      keyName.textContent = 'Keyfile nicht verfügbar (native)';
+      keyName.title = nativeKeyError;
     });
 
   card.append(
