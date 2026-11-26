@@ -14,3 +14,11 @@ rm -f "$OUT"
 (cd packages/extension/dist/firefox && zip -q -r -X "$(basename "$OUT")" manifest.json background.js content.js popup options)
 
 echo "✓ $OUT ($(wc -c < "$OUT") Bytes) — Firefox Dev Edition neu starten."
+
+# Installierte Kopie im Dev-Profil DIREKT ersetzen: der Policy-Reinstall bei
+# Dateiänderung greift nicht zuverlässig bei jedem Start — so übernimmt der
+# nächste Browser-Start garantiert den neuen Build (Signatur egal in Dev).
+PROFXPI="$HOME/.config/kdbx-dev-firefox/profile/extensions/kdbx-keychain@nix-dev.link.xpi"
+if [[ -d "$(dirname "$PROFXPI")" ]]; then
+  cp "$OUT" "$PROFXPI" && echo "✓ Dev-Profil-XPI ersetzt: $PROFXPI"
+fi
