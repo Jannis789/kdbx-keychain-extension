@@ -28,6 +28,8 @@ export function fetchKeyfileViaNative(timeoutMs = 3000): Promise<NativeKeyfile> 
   return new Promise((resolve) => {
     let settled = false;
     let port: chrome.runtime.Port | null = null;
+    const t0 = Date.now();
+    const tag = (): string => `id=${chrome.runtime.id} t=${Date.now() - t0}ms`;
     const done = (r: NativeKeyfile): void => {
       if (settled) return;
       settled = true;
@@ -39,7 +41,7 @@ export function fetchKeyfileViaNative(timeoutMs = 3000): Promise<NativeKeyfile> 
       }
       resolve(r);
     };
-    const timer = setTimeout(() => done({ b64: null, error: 'timeout' }), timeoutMs);
+    const timer = setTimeout(() => done({ b64: null, error: `timeout (${tag()})` }), timeoutMs);
     try {
       port = chrome.runtime.connectNative(HOST_NAME);
     } catch (e) {
@@ -56,7 +58,10 @@ export function fetchKeyfileViaNative(timeoutMs = 3000): Promise<NativeKeyfile> 
     port.onDisconnect.addListener(() => {
       const le = lastErrorText();
       // settled-Guard: nach erfolgreicher onMessage-Antwort ist done schon gelaufen
-      done({ b64: null, error: le ? `disconnect: ${le}` : 'disconnect ohne lastError' });
+      done({
+        b64: null,
+        error: le ? `disconnect: ${le}` : `disconnect ohne lastError (${tag()})`,
+      });
     });
     port.postMessage({ type: 'getKeyfile' });
   });
