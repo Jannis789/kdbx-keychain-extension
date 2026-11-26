@@ -198,14 +198,17 @@ function renderLocked(): void {
   async function doUnlock(): Promise<void> {
     errBox.hidden = true;
     unlockBtn.disabled = true;
+    let keyFileBase64: string | undefined;
     try {
-      let keyFileBase64: string | undefined;
       const file = keyInput.files?.[0];
       if (file) {
         const buf = await file.arrayBuffer();
         keyFileBase64 = encodeBase64(new Uint8Array(buf));
-      } else if (prefilledKeyB64) {
-        keyFileBase64 = prefilledKeyB64;
+      } else {
+        // Race schließen: Prefill ist async — vor dem Unlock aktiv abwarten
+        // (kurz), damit Enter-zu-schnell nicht ohne Keyfile entschlüsselt.
+        await prefillPromise;
+        if (prefilledKeyB64) keyFileBase64 = prefilledKeyB64;
       }
       state.snapshot = await callBackground<Snapshot>({
         type: 'UNLOCK',
@@ -215,7 +218,11 @@ function renderLocked(): void {
       state.view = 'list';
       void showList();
     } catch (e) {
-      errBox.textContent = e instanceof Error ? e.message : String(e);
+      const msg = e instanceof Error ? e.message : String(e);
+      errBox.textContent =
+        keyFileBase64 === undefined && msg.includes('InvalidKey')
+          ? 'Entsperren fehlgeschlagen — Keyfile fehlte (s. Feld unten). ' + msg
+          : 'Entsperren fehlgeschlagen — Passwort/Keyfile falsch? ' + msg;
       errBox.hidden = false;
     } finally {
       unlockBtn.disabled = false;
@@ -225,7 +232,9 @@ function renderLocked(): void {
   // ADR-010: Keyfile vorab über den Native-Messaging-Host ziehen (agenix).
   // Scheitert es, bleibt die manuelle Dateiauswahl der Weg.
   let prefilledKeyB64: string | undefined;
-  void callBackground<{ b64?: string; source?: string }>({ type: 'PREFILL_KEYFILE' })
+  const prefillPromise: Promise<unknown> = callBackground<{ b64?: string; source?: string }>({
+    type: 'PREFILL_KEYFILE',
+  })
     .then((res) => {
       if (res.b64) {
         prefilledKeyB64 = res.b64;
