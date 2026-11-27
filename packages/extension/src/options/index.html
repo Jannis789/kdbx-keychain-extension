@@ -40,16 +40,17 @@
         <h3>App-Credentials (optional — ADR-012)</h3>
         <div class="grid">
           <label for="set-appkey">App-Key (client_id)</label>
-          <input id="set-appkey" type="text" autocomplete="off" placeholder="leer = Build-Injection (ADR-007)" />
+          <input id="set-appkey" type="text" autocomplete="off" placeholder="leer = Host-Deploy (managed)" />
           <label for="set-appsecret">App-Secret (client_secret)</label>
-          <input id="set-appsecret" type="password" autocomplete="off" placeholder="leer = Build-Injection" />
+          <input id="set-appsecret" type="password" autocomplete="off" placeholder="leer = Host-Deploy (managed)" />
         </div>
         <button id="btn-app" class="btn small">Credentials übernehmen</button>
         <p class="note">
           Liegen nur im lokalen Browser-Speicher — nie im Repo oder Bundle.
           Priorität: hier gepflegt &gt; Host-Deploy (chrome.storage.managed,
-          nix) &gt; Build-Standard (ADR-007). Redirect-URIs oben (Chrome
-          <em>und</em> Firefox) gehören in die Dropbox-App-Konsole.
+          nix); einen Build-Standard gibt es seit ADR-012 nicht mehr.
+          Redirect-URIs oben (Chrome <em>und</em> Firefox) gehören in die
+          Dropbox-App-Konsole.
         </p>
       </div>
 

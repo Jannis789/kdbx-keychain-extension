@@ -8,9 +8,12 @@
  * Vertrauensgrenze (bewusst schmal): beide Quellen schreiben nur wir selbst —
  * `chrome.storage.local` über `saveDropboxAppConfig`, `chrome.storage.managed`
  * über die nix-Activation (`jq --arg` erzeugt immer Strings). Es gibt daher
- * keine Typ-Wiederherstellung beim Lesen: falscher Inhalt ist ein Bug, der
- * auffallen soll, kein Zustand, den wir wegdefinieren (kein "defensive
- * programming" als Fehler-Ersatz).
+ * weder Typ-Wiederherstellung beim Lesen noch Merge-Logik beim Schreiben:
+ * falscher Inhalt ist ein Bug, der auffallen soll, kein Zustand, den wir
+ * wegdefinieren (kein "defensive programming" als Fehler-Ersatz).
+ *
+ * Whitespace schneidet die Options-Seite an ihren Eingabefeldern ab — dort
+ * entsteht er (Zwischenablage), nicht hier.
  */
 export interface DropboxAppConfig {
   appKey: string;
@@ -28,20 +31,6 @@ const MANAGED_KEYS: (keyof ManagedConfig)[] = ['appKey', 'appSecret', 'refreshTo
 
 const EMPTY_APP: DropboxAppConfig = { appKey: '', appSecret: '' };
 const EMPTY_MANAGED: ManagedConfig = { ...EMPTY_APP, refreshToken: '', remotePath: '' };
-
-/**
- * Nur an der Eingabegrenze: menschlich eingefügte Keys/Secrets tragen oft
- * Whitespace aus der Zwischenablage — das ist UX, keine Fehlerabwehr.
- */
-export function mergeDropboxAppConfig(
-  current: DropboxAppConfig,
-  patch: Partial<DropboxAppConfig>,
-): DropboxAppConfig {
-  return {
-    appKey: (patch.appKey ?? current.appKey).trim(),
-    appSecret: (patch.appSecret ?? current.appSecret).trim(),
-  };
-}
 
 let cache: DropboxAppConfig = EMPTY_APP;
 let managed: ManagedConfig = EMPTY_MANAGED;
@@ -76,11 +65,10 @@ export async function loadDropboxAppConfig(): Promise<void> {
   cache = stored ?? EMPTY_APP;
 }
 
-export async function saveDropboxAppConfig(patch: Partial<DropboxAppConfig>): Promise<DropboxAppConfig> {
-  const next = mergeDropboxAppConfig(cache, patch);
+/** Einziger Schreiber des Options-Stands: ganzer Satz rein, leer = „nicht gesetzt". */
+export async function saveDropboxAppConfig(next: DropboxAppConfig): Promise<void> {
   cache = next;
   await chrome.storage.local.set({ [STORAGE_KEY]: next });
-  return next;
 }
 
 /** Gepflegter Stand ohne Host-Deploy — für die Options-Anzeige. */

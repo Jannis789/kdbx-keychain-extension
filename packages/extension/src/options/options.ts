@@ -76,14 +76,12 @@ const appSecretIn = $<HTMLInputElement>('set-appsecret');
 
 $('btn-app').addEventListener('click', async () => {
   try {
-    // Leere Felder = löschen → Build-Fallback (ADR-007) greift wieder.
-    const res = await callBackground<{ appKey: string; appSecret: string }>({
+    // Leere Felder = „nicht gesetzt" → Host-Deploy (managed) greift wieder.
+    await callBackground({
       type: 'SET_DROPBOX_APP',
       appKey: appKeyIn.value.trim(),
       appSecret: appSecretIn.value.trim(),
     });
-    appKeyIn.value = res.appKey;
-    appSecretIn.value = res.appSecret;
     toast('Dropbox-Credentials übernommen');
   } catch (e) {
     toast(e instanceof Error ? e.message : String(e));
