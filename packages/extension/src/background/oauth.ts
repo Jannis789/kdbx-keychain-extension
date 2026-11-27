@@ -1,6 +1,7 @@
 /**
- * Dropbox-Connect aus der Extension heraus: OAuth 2.0 + PKCE (ADR-002/007).
- * Nur der App-Key wird gebraucht (Build-Injection, ADR-007) — kein Secret.
+ * Dropbox-Connect aus der Extension heraus: OAuth 2.0 + PKCE (ADR-002).
+ * Der App-Key kommt aus der Options-Pflege (ADR-012), Fallback ist die
+ * Build-Injection (ADR-007) — ein Secret gehört nie in den Auth-Flow.
  *
  * Redirect-URI: chrome.identity.getRedirectURL() liefert
  * https://<extension-id>.chromiumapp.org/ — die Extension-ID ist über das
@@ -8,7 +9,7 @@
  * Dropbox-App-Konsole einmalig eingetragen werden kann.
  */
 import { buildAuthUrl, exchangeCode, generatePkce } from '@kdbx-keychain/core';
-import { APP_KEY, hasAppKey } from './app-key';
+import { hasResolvedAppKey, resolvedAppKey } from './dropbox-config';
 import type { Vault } from './vault';
 
 export function dropboxRedirectUri(): string {
@@ -19,12 +20,15 @@ export async function connectDropboxPkce(vault: Vault): Promise<void> {
   if (typeof chrome.identity === 'undefined') {
     throw new Error('chrome.identity nicht verfügbar');
   }
-  if (!hasAppKey()) {
-    throw new Error('DROPBOX_APP_KEY fehlt — Build ohne ADR-007-Injection ausgeführt.');
+  if (!hasResolvedAppKey()) {
+    throw new Error(
+      'Kein Dropbox App-Key — in den Einstellungen pflegen (ADR-012) oder Build mit ADR-007-Injection.',
+    );
   }
   const pkce = await generatePkce();
   const redirectUri = dropboxRedirectUri();
-  const url = buildAuthUrl({ appKey: APP_KEY, redirectUri, pkce });
+  const appKey = resolvedAppKey();
+  const url = buildAuthUrl({ appKey, redirectUri, pkce });
   const redirect = await new Promise<string | undefined>((resolve, reject) => {
     chrome.identity.launchWebAuthFlow({ url, interactive: true }, (res) => {
       const err = chrome.runtime.lastError;
@@ -40,7 +44,7 @@ export async function connectDropboxPkce(vault: Vault): Promise<void> {
     throw new Error('OAuth-State-Mismatch — Abbruch.');
   }
   const tokens = await exchangeCode({
-    appKey: APP_KEY,
+    appKey,
     code,
     redirectUri,
     codeVerifier: pkce.verifier,

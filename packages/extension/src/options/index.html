@@ -36,6 +36,20 @@
           <textarea id="refresh-token" rows="2" placeholder="refresh_token (z. B. aus rclone.conf [dropbox] token=… JSON)"></textarea>
         </div>
         <button id="btn-token" class="btn small">Token übernehmen</button>
+
+        <h3>App-Credentials (optional — ADR-012)</h3>
+        <div class="grid">
+          <label for="set-appkey">App-Key (client_id)</label>
+          <input id="set-appkey" type="text" autocomplete="off" placeholder="leer = Build-Injection (ADR-007)" />
+          <label for="set-appsecret">App-Secret (client_secret)</label>
+          <input id="set-appsecret" type="password" autocomplete="off" placeholder="leer = Build-Injection" />
+        </div>
+        <button id="btn-app" class="btn small">Credentials übernehmen</button>
+        <p class="note">
+          Liegen nur im lokalen Browser-Speicher — nie im Repo oder Bundle.
+          Ohne Eintrag gilt der Build-Standard. Sämtliche Redirect-URIs oben
+          (Chrome <em>und</em> Firefox) gehören in die Dropbox-App-Konsole.
+        </p>
       </div>
 
       <div class="card">

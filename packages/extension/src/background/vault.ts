@@ -50,6 +50,8 @@ export interface VaultDeps {
   alarms: AlarmScheduler;
   port: DatabasePort;
   cloudFactory: CloudFactory;
+  /** ADR-012: Dropbox-Credentials-Cache muss vor erster Factory-Nutzung geladen sein. */
+  ready?: Promise<void>;
   now?(): number;
 }
 
@@ -124,6 +126,7 @@ export class Vault {
   }
 
   private async doInit(): Promise<void> {
+    await this.deps.ready;
     this.settings = mergeSettings(
       DEFAULT_SETTINGS,
       (await this.deps.local.get(KEY.settings)) as Partial<Settings> | undefined ?? {},
@@ -378,6 +381,12 @@ export class Vault {
       });
     }
     return this.cloudInstance;
+  }
+
+  /** ADR-012: nach Credential-Änderung Cloud-Instanz verwerfen (neu gebaut). */
+  invalidateCloud(): void {
+    this.cloudInstance = null;
+    this.lastError = null;
   }
 
   async pushBestEffort(bytes?: Uint8Array): Promise<void> {

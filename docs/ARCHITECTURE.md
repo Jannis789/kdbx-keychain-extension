@@ -142,6 +142,20 @@ imperativer DOM-Code mehr. Ziel ist „mehr HTML als JS-Ausdrücke“:
   htmx-Stil (setzt Server voraus, den eine Extension nicht hat). Preact ist
   hier reines Komponenten-Modell (~4 KB), kein Statement über htmx.
 
+### ADR-012 — Dropbox-Credentials zur Laufzeit pflegen (Options + Storage)
+App-Key/-Secret werden in der Options-Seite gepflegt und liegen in
+`chrome.storage.local` (`kdbx.dropboxApp`) — nie im Bundle. Die
+Build-Injection (ADR-007) bleibt Dev-Prefill/Fallback; Resolution-Order:
+Options-Pflege > Build-Default. Konsequenzen:
+- Release-Builds (AMO) werden „naiv" gebaut — keine Secrets im Artefakt.
+- Die synchrone CloudFactory liest einen Cache, der vor der ersten
+  Vault-Init geladen ist (`VaultDeps.ready`); `SET_DROPBOX_APP` wirft die
+  Cloud-Instanz weg (`vault.invalidateCloud()`).
+- Firefox (MV3): `chrome.identity` existiert nativ; das Firefox-Manifest
+  braucht die `identity`-Permission, und `getRedirectURL()` liefert dort
+  eine `https://<id>.extensions.allizom.org/`-URI (statt chromiumapp.org),
+  die zusätzlich in der Dropbox-App-Konsole registriert werden muss.
+
 ## Sicherheitsmodell (Kurz-Threat-Modell)
 
 - At rest ist die KDBX immer verschlüsselt (KDBX4: AES-256 + Argon2id).

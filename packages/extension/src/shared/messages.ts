@@ -54,6 +54,8 @@ export type RuntimeMessage =
   | { type: 'SET_REFRESH_TOKEN'; refreshToken: string }
   | { type: 'DISCONNECT_DROPBOX' }
   | { type: 'SET_SETTINGS'; patch: Partial<Settings> }
+  | { type: 'GET_DROPBOX_APP' }
+  | { type: 'SET_DROPBOX_APP'; appKey: string; appSecret: string }
   /** Nur Content-Script (via chrome.tabs.sendMessage) — Router lehnt ab. */
   | { type: 'FILL_INTO_DOM'; username?: string; password?: string; totp?: string };
 

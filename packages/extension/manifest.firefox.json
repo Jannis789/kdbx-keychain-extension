@@ -27,6 +27,7 @@
     "page": "options/index.html"
   },
   "permissions": [
+    "identity",
     "storage",
     "activeTab",
     "scripting",

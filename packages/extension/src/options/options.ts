@@ -73,6 +73,25 @@ $('btn-token').addEventListener('click', async () => {
   }
 });
 
+const appKeyIn = $<HTMLInputElement>('set-appkey');
+const appSecretIn = $<HTMLInputElement>('set-appsecret');
+
+$('btn-app').addEventListener('click', async () => {
+  try {
+    // Leere Felder = löschen → Build-Fallback (ADR-007) greift wieder.
+    const res = await callBackground<{ appKey: string; appSecret: string }>({
+      type: 'SET_DROPBOX_APP',
+      appKey: appKeyIn.value.trim(),
+      appSecret: appSecretIn.value.trim(),
+    });
+    appKeyIn.value = res.appKey;
+    appSecretIn.value = res.appSecret;
+    toast('Dropbox-Credentials übernommen');
+  } catch (e) {
+    toast(e instanceof Error ? e.message : String(e));
+  }
+});
+
 $('btn-save').addEventListener('click', async () => {
   try {
     const res = await callBackground<{ snapshot: Snapshot }>({
@@ -94,14 +113,19 @@ $('btn-save').addEventListener('click', async () => {
   try {
     const snap = await callBackground<Snapshot>({ type: 'LOCK_STATE' });
     applySnapshot(snap);
+    const app = await callBackground<{ appKey: string; appSecret: string }>({ type: 'GET_DROPBOX_APP' });
+    appKeyIn.value = app.appKey;
+    appSecretIn.value = app.appSecret;
     const uri = chrome.identity?.getRedirectURL?.() ?? '';
     $('redirect-uri').textContent = uri || '(Chrome-Redirect-URI nicht verfügbar)';
-    // Firefox: chrome.identity existiert nicht — Connect per PKCE ist dort
-    // nicht möglich (Refresh-Token kommt deklarativ per Build-Injection).
+    // Firefox unterstützt chrome.identity (launchWebAuthFlow) gleichermaßen;
+    // nur die Redirect-URI unterscheidet sich (extensions.allizom.org statt
+    // chromiumapp.org) und muss zusätzlich in der Dropbox-Konsole registriert
+    // werden. Ohne identity-API (Alt-Builds) bleibt der Token-Import.
     if (typeof chrome.identity?.launchWebAuthFlow !== 'function') {
       ($('btn-connect') as HTMLButtonElement).hidden = true;
       $('redirect-uri').textContent =
-        '(Firefox: Token per Build injiziert — kein OAuth-Flow nötig)';
+        '(identity-API nicht verfügbar — Token manuell importieren)';
     }
   } catch (e) {
     toast(e instanceof Error ? e.message : String(e));

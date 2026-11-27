@@ -7,14 +7,21 @@ import { AUTO_LOCK_ALARM, Vault, type CloudFactory } from './vault';
 import { CLIPBOARD_CLEAR_ALARM, clearClipboardIfExpected } from './clipboard';
 import { chromeAlarms, chromeKV } from './ports';
 import { createRouter, matchAndFillActiveTab } from './router';
-import { hasAppKey, APP_KEY, APP_SECRET } from './app-key';
+import {
+  hasResolvedAppKey,
+  loadDropboxAppConfig,
+  resolvedAppKey,
+  resolvedAppSecret,
+} from './dropbox-config';
 import type { RuntimeMessage } from '../shared/messages';
 
 const cloudFactory: CloudFactory = ({ refreshToken, onTokenRefreshed }) => {
-  if (!hasAppKey()) return null;
+  // ADR-012: Options-Pflege schlägt Build-Injection (dropbox-config-Resolution).
+  if (!hasResolvedAppKey()) return null;
+  const appSecret = resolvedAppSecret();
   return new DropboxCloud({
-    appKey: APP_KEY,
-    ...(APP_SECRET ? { appSecret: APP_SECRET } : {}),
+    appKey: resolvedAppKey(),
+    ...(appSecret ? { appSecret } : {}),
     refreshToken,
     onTokenRefreshed: (t) => onTokenRefreshed(t.refreshToken),
   });
@@ -26,6 +33,8 @@ const vault = new Vault({
   alarms: chromeAlarms(),
   port: createKdbxDatabasePort(),
   cloudFactory,
+  // Credentials laden, BEVOR init()/cloudFactory greift (Reihenfolge-Garantie).
+  ready: loadDropboxAppConfig(),
 });
 
 const route = createRouter(vault);

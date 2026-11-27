@@ -11,7 +11,8 @@ import type {
   TotpInfo,
 } from '../shared/messages';
 import { armClipboardClear, copyToClipboard, setClipboardExpected } from './clipboard';
-import { connectDropboxPkce } from './oauth';
+import { connectDropboxPkce, dropboxRedirectUri } from './oauth';
+import { dropboxAppConfig, saveDropboxAppConfig } from './dropbox-config';
 import { fetchKeyfileViaNative } from './native';
 import {
   ensureContentScript,
@@ -162,6 +163,22 @@ export function createRouter(vault: Vault): Route {
         case 'SET_SETTINGS': {
           await vault.setSettings(message.patch);
           return ok({ snapshot: await vault.snapshot() });
+        }
+        case 'GET_DROPBOX_APP': {
+          const cfg = dropboxAppConfig();
+          return ok({
+            appKey: cfg.appKey,
+            appSecret: cfg.appSecret,
+            redirectUri: dropboxRedirectUri(),
+          });
+        }
+        case 'SET_DROPBOX_APP': {
+          const cfg = await saveDropboxAppConfig({
+            appKey: message.appKey,
+            appSecret: message.appSecret,
+          });
+          vault.invalidateCloud();
+          return ok({ appKey: cfg.appKey, appSecret: cfg.appSecret, snapshot: await vault.snapshot() });
         }
         case 'FILL_INTO_DOM':
           return { ok: false, error: 'FILL_INTO_DOM ist nur für Content-Scripts (chrome.tabs)' };
