@@ -41,7 +41,8 @@ export type RuntimeMessage =
   | { type: 'LIST'; query?: string }
   | { type: 'GET_ENTRY'; entryId: string }
   | { type: 'MATCH_URL'; url: string }
-  | { type: 'COPY'; entryId: string; field: CopyableField }
+  /** Liefert den Feldwert — geschrieben wird im Popup (dort: Fokus + Geste). */
+  | { type: 'READ_FIELD'; entryId: string; field: CopyableField }
   | { type: 'TOTP_NOW'; entryId: string }
   | { type: 'FILL'; entryId: string }
   | { type: 'CREATE_ENTRY'; fields: EntryFields }

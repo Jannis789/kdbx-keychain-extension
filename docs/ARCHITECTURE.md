@@ -107,8 +107,14 @@ RFC 6238 lokal. Steam-TOTP optional später.
 ### ADR-009 — Copy-Funktion & Clipboard
 Kopieren von Passwort/Username/TOTP/Custom-Fields — **nur Schreiben**. Ein
 Clipboard-Auto-Clear war nie gefordert und wurde 2026-11-27 auf Produkt-
-entscheidung entfernt (YAGNI). Restmechanik: Chrome-MV3-SW ohne DOM →
-Offscreen-Dokument (Reason CLIPBOARD) schreibt; Firefox-Event-Page direkt.
+entscheidung entfernt (YAGNI).
+
+Geschrieben wird **im Popup**, nicht im Background: `READ_FIELD` liefert den
+Wert, `navigator.clipboard.writeText` läuft im fokussierten Dokument mit
+Nutzergeste. Die API ist zwar auch im Worker/SW exponiert (`WorkerNavigator`),
+aber `writeText` dort scheitert in Chrome an `NotAllowedError: Document is not
+focused` — deshalb sind Offscreen-Dokument, `offscreen`-Permission und der
+Browser-Zweig entfallen (2026-11-27).
 
 ### ADR-010 — Design: libadwaita-inspiriert
 Tokens statt Pixelkopie: Akzent `#3584e4`, Cards mit 12 px Radius, dunkles Scheme
@@ -122,7 +128,7 @@ imperativer DOM-Code mehr. Ziel ist „mehr HTML als JS-Ausdrücke“:
   Popup ist eine Projektion: Views bekommen Daten als Props, nie via
   DOM-Lesezugriff. Ein gesperrter Tresor überschreibt jede Navigation.
 - **Interaktion = Message.** Jede Nutzeraktion schickt eine RuntimeMessage an
-  den Router (COPY, SYNC_PUSH, UNLOCK, …) und übernimmt den neuen Snapshot —
+  den Router (READ_FIELD, SYNC_PUSH, UNLOCK, …) und übernimmt den neuen Snapshot —
   nie einen direkten DOM-Zweig.
 - **JSX schlägt Helfer.** Bedingte Abschnitte stehen als JSX-Blöcke
   (`{f.url && <Row … />}`), nicht in h()-Ketten; nur wirklich
@@ -165,6 +171,6 @@ wird erst nach dem Ladeversprechen (`VaultDeps.ready`) ausgewertet.
 - Entsperrt liegt Klartext **nur im RAM** des jeweiligen Prozesses
   (Extension: `storage.session`; gsecrets: eigener Prozess).
 - Dropbox sieht ausschließlich Ciphertext.
-- Größte Angriffsflächen: Clipboard und Auto-Fill → Auto-Clear (ADR-009),
-  Matching nur bei User-Intent (ADR-006).
+- Größte Angriffsflächen: Clipboard und Auto-Fill → Schreiben nur im Popup
+  mit Nutzergeste (ADR-009), Matching nur bei User-Intent (ADR-006).
 - Dropbox-Tokens (Extension, rclone) und App-Secret stehen nie in einem Repo.

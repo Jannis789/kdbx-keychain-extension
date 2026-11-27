@@ -34,7 +34,6 @@
     "scripting",
     "contextMenus",
     "clipboardWrite",
-    "clipboardRead",
     "nativeMessaging",
     "alarms"
   ],

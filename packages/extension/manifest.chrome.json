@@ -18,10 +18,8 @@
     "scripting",
     "contextMenus",
     "clipboardWrite",
-    "clipboardRead",
     "nativeMessaging",
     "identity",
-    "offscreen",
     "alarms"
   ],
   "host_permissions": ["<all_urls>"],

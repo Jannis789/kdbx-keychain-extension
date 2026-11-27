@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "Browser-Extension (Chrome MV3, Firefox MV3 folgt Phase 4): Popup, Vault-Service (stay-open, ADR-004), Dropbox-Sync (ADR-005), Auto-Fill (ADR-006), Clipboard-Auto-Clear (ADR-009).",
+  "description": "Browser-Extension (Chrome MV3, Firefox MV3 folgt Phase 4): Popup, Vault-Service (stay-open, ADR-004), Dropbox-Sync (ADR-005), Auto-Fill (ADR-006), Clipboard-Schreiben im Popup (ADR-009).",
   "dependencies": {
     "@kdbx-keychain/core": "*",
     "@xmldom/xmldom": "^0.7.13",

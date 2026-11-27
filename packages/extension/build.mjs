@@ -22,7 +22,6 @@ const entryPoints = {
   content: join(src, 'content/content.ts'),
   'popup/popup': join(src, 'popup/popup.tsx'),
   'options/options': join(src, 'options/options.ts'),
-  'offscreen/clipboard': join(src, 'offscreen/clipboard.ts'),
 };
 
 const staticFiles = (name) => [
@@ -30,8 +29,6 @@ const staticFiles = (name) => [
   ['popup/index.html', 'popup/index.html'],
   ['popup/style.css', 'popup/style.css'],
   ['options/index.html', 'options/index.html'],
-  // Offscreen-Dokument nur für Chrome (Firefox nutzt die Event-Page direkt)
-  ...(name === 'chrome' ? [['offscreen/clipboard.html', 'offscreen/clipboard.html']] : []),
 ];
 
 function copyStatic(out, name) {

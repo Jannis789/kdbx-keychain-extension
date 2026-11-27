@@ -10,7 +10,6 @@ import type {
   Snapshot,
   TotpInfo,
 } from '../shared/messages';
-import { copyToClipboard } from './clipboard';
 import { connectDropboxPkce, dropboxRedirectUri } from './oauth';
 import { dropboxAppConfig, saveDropboxAppConfig } from './dropbox-config';
 import { fetchKeyfileViaNative } from './native';
@@ -86,12 +85,11 @@ export function createRouter(vault: Vault): Route {
           const info: TotpInfo | null = await vault.totpNow(message.entryId);
           return ok(info);
         }
-        case 'COPY': {
+        case 'READ_FIELD': {
           await vault.touch();
           const value = await vault.readField(message.entryId, message.field);
           if (!value) throw new Error('Feld ist leer');
-          await copyToClipboard(value);
-          return ok({ copied: true });
+          return ok({ value });
         }
         case 'FILL':
           await vault.touch();

@@ -54,11 +54,16 @@ const NotifyCtx = createContext<(message: string) => void>(() => {});
 
 // ---------- Primitives ----------
 
-/** Kopiert ein Feld über den Background und meldet den Erfolg als Toast. */
+/**
+ * Kopiert ein Feld: der Background liefert den Wert, geschrieben wird hier —
+ * das Popup ist ein fokussiertes Dokument mit Nutzergeste, das ist der Pfad,
+ * den die Clipboard-API verlangt (ADR-009).
+ */
 function useCopy(): (entryId: string, field: CopyableField) => Promise<void> {
   const notify = useContext(NotifyCtx);
   return async (entryId, field) => {
-    await callBackground({ type: 'COPY', entryId, field });
+    const { value } = await callBackground<{ value: string }>({ type: 'READ_FIELD', entryId, field });
+    await navigator.clipboard.writeText(value);
     notify('Kopiert');
   };
 }
