@@ -109,7 +109,12 @@ export function createRouter(vault: Vault): Route {
           const name = path ? path.split('/').pop() : undefined;
           return ok(
             b64
-              ? { b64, source: 'native', ...(name ? { name } : {}) }
+              ? {
+                  b64,
+                  source: 'native',
+                  ...(name ? { name } : {}),
+                  ...(path ? { path } : {}),
+                }
               : { ...(error ? { error } : {}) },
           );
         }

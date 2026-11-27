@@ -184,24 +184,30 @@ function renderLocked(): void {
     placeholder: 'Master-Passwort',
     autocomplete: 'off',
   }) as HTMLInputElement;
-  // Beide Dateinamen sichtbar: Tresor (aus remotePath) + Keyfile (vorausgefüllt oder gewählt).
+  // Datei-Metadaten kompakt: Tresor + Keyfile mit Icons, Namen ohne Prefix.
   const vaultPath = state.snapshot?.settings.remotePath ?? '';
   const vaultName = vaultPath.split('/').pop() || 'export.kdbx';
-  const vaultInfo = h('span', { class: 'key-status' }, `Tresor: ${vaultName}`);
+  const vaultInfo = h('span', { class: 'file-name' }, vaultName);
   if (vaultPath) vaultInfo.title = vaultPath;
-  const keyName = h('span', { class: 'dim key-status' }, 'Keyfile: keine gewählt');
+  const keyName = h('span', { class: 'file-name dim' }, 'keine .key-Datei');
   const keyInput = h('input', { type: 'file', accept: '.key,.keyx', class: 'file-input' }) as HTMLInputElement;
   keyInput.addEventListener('change', () => {
     const f = keyInput.files?.[0];
     if (f) {
-      keyName.textContent = `Keyfile: ${f.name}`;
+      keyName.textContent = f.name;
+      keyName.classList.remove('dim', 'key-status-err');
       keyName.title = '';
-      keyName.classList.add('key-status-ok');
     }
   });
   // Native File-Picker-UI ("Browse… No File Selected") ist verwirrend — der
-  // Button öffnet den Picker, der Status zeigt gewählte/vorausgefüllte Datei.
-  const keyBtn = button('Key-Datei wählen…', 'btn', () => keyInput.click());
+  // Button öffnet den Picker, die Meta-Box zeigt gewählte/vorausgefüllte Datei.
+  const keyBtn = button('auswählen', 'btn small', () => keyInput.click());
+  const fileMeta = h(
+    'div',
+    { class: 'file-meta' },
+    h('div', { class: 'file-row' }, h('span', { class: 'file-ico' }, '🗄'), vaultInfo),
+    h('div', { class: 'file-row' }, h('span', { class: 'file-ico' }, '🔑'), keyName, keyBtn),
+  );
   const errBox = h('div', { class: 'banner danger', hidden: 'true' });
   const unlockBtn = button('Entsperren', 'btn primary wide', doUnlock);
   pw.addEventListener('keydown', (e) => {
@@ -252,6 +258,7 @@ function renderLocked(): void {
     b64?: string;
     source?: string;
     name?: string;
+    path?: string;
     error?: string;
   }>({
     type: 'PREFILL_KEYFILE',
@@ -259,24 +266,27 @@ function renderLocked(): void {
     .then((res) => {
       if (res.b64) {
         prefilledKeyB64 = res.b64;
-        keyName.textContent = `Keyfile: ${res.name ?? 'export.key'} (vorausgefüllt, agenix)`;
-        keyName.classList.add('key-status-ok');
+        keyName.textContent = res.name ?? 'export.key';
+        if (res.path) keyName.title = res.path;
+        keyName.classList.remove('dim', 'key-status-err');
       } else if (res.error) {
         nativeKeyError = res.error;
-        keyName.textContent = 'Keyfile nicht verfügbar (native)';
+        keyName.textContent = 'nicht verfügbar';
+        keyName.classList.add('key-status-err');
         keyName.title = res.error;
       }
     })
     .catch((e: unknown) => {
       nativeKeyError = e instanceof Error ? e.message : String(e);
-      keyName.textContent = 'Keyfile nicht verfügbar (native)';
+      keyName.textContent = 'nicht verfügbar';
+      keyName.classList.add('key-status-err');
       keyName.title = nativeKeyError;
     });
 
   card.append(
     h('h2', {}, 'Tresor entsperren'),
     h('label', { class: 'field' }, 'Master-Passwort', pw),
-    h('div', { class: 'field' }, vaultInfo, h('div', { class: 'key-row' }, keyBtn, keyName), keyInput),
+    h('div', { class: 'field' }, fileMeta, keyInput),
     errBox,
     unlockBtn,
   );

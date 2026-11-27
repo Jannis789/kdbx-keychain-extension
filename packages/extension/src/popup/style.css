@@ -69,7 +69,7 @@ h2 { font-size: 14px; font-weight: 700; margin: 0 0 10px; }
 
 .header-actions { display: flex; gap: 4px; }
 
-main { padding: 8px 12px 14px; display: flex; flex-direction: column; gap: 10px; }
+main { padding: 6px 12px 14px; display: flex; flex-direction: column; gap: 10px; }
 
 /* ---------- Chips & Banner ---------- */
 
@@ -196,9 +196,20 @@ input:focus, textarea:focus {
   border-color: var(--accent);
 }
 input[type='file'].file-input { display: none; } /* Picker per Button, Datei-Status namentlich */
-.key-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.key-status { font-size: 12px; }
-.key-status-ok { color: var(--ok); }
+.file-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 8px 10px;
+  background: var(--card-shade);
+  border-radius: 10px;
+}
+.file-row { display: flex; align-items: center; gap: 8px; font-size: 12px; min-width: 0; }
+.file-ico { font-size: 13px; flex: none; }
+.file-name { color: var(--fg); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.file-name.dim { color: var(--fg-dim); font-weight: 400; }
+.key-status-err { color: var(--danger); }
+.file-row .btn { margin-left: auto; flex: none; }
 
 .field {
   display: flex;
