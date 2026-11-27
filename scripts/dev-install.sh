@@ -18,7 +18,8 @@ if pgrep -f "firefox-devedition" > /dev/null; then
 fi
 OUT=packages/extension/dist/firefox/kdbx-keychain-dev.xpi
 rm -f "$OUT"
-(cd packages/extension/dist/firefox && zip -q -r -X "$(basename "$OUT")" manifest.json background.js content.js popup options)
+# managed-schema.json gehört ins XPI: das Manifest referenziert es (ADR-012).
+(cd packages/extension/dist/firefox && zip -q -r -X "$(basename "$OUT")" manifest.json background.js content.js managed-schema.json popup options)
 
 echo "✓ $OUT ($(wc -c < "$OUT") Bytes) — Firefox Dev Edition neu starten."
 
