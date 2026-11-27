@@ -1,5 +1,5 @@
 /** Port-Adapter: chrome.storage → KVStore (Vault kennt nur das Interface). */
-import type { KVStore } from '../features/vault/vault';
+import type { KVStore } from '../features/vault/ports';
 import { wrap } from './wrap';
 
 export function chromeKV(area: chrome.storage.StorageArea): KVStore {

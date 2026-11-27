@@ -17,13 +17,8 @@ import type {
   UnlockedDatabase,
 } from '@kdbx-keychain/core';
 import { encodeBase64 } from '../../shared/base64';
-import {
-  AUTO_LOCK_ALARM,
-  Vault,
-  type AlarmScheduler,
-  type CloudFactory,
-  type KVStore,
-} from './vault';
+import type { AlarmScheduler, CloudFactory, KVStore } from './ports';
+import { AUTO_LOCK_ALARM, Vault } from './vault';
 
 const MASTER = 'master-pw';
 const K = {

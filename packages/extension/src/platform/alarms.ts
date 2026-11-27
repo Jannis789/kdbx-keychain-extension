@@ -1,5 +1,5 @@
 /** Port-Adapter: chrome.alarms → AlarmScheduler (Auto-Lock, ADR-004). */
-import type { AlarmScheduler } from '../features/vault/vault';
+import type { AlarmScheduler } from '../features/vault/ports';
 import { wrap } from './wrap';
 
 export function chromeAlarms(): AlarmScheduler {

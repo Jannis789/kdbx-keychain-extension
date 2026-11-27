@@ -3,7 +3,8 @@
  * Vault + Router + Kontextmenü + Shortcut.
  */
 import { createKdbxDatabasePort, DropboxCloud } from '@kdbx-keychain/core';
-import { AUTO_LOCK_ALARM, Vault, type CloudFactory } from './features/vault/vault';
+import type { CloudFactory } from './features/vault/ports';
+import { AUTO_LOCK_ALARM, Vault } from './features/vault/vault';
 import { chromeAlarms } from './platform/alarms';
 import { chromeKV } from './platform/storage';
 import { createRouter, matchAndFillActiveTab } from './router';

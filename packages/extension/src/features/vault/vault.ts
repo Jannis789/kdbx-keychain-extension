@@ -26,23 +26,8 @@ import type {
 } from '@kdbx-keychain/core';
 import { decodeBase64, encodeBase64 } from '../../shared/base64';
 import type { CopyableField, Snapshot, SyncInfo, TotpInfo } from '../../shared/messages';
+import type { AlarmScheduler, CloudFactory, KVStore } from './ports';
 import { DEFAULT_SETTINGS, mergeSettings, type Settings } from '@kdbx-keychain/core';
-
-export interface KVStore {
-  get(key: string): Promise<unknown>;
-  set(key: string, value: unknown): Promise<void>;
-  remove(key: string): Promise<void>;
-}
-
-export interface AlarmScheduler {
-  create(name: string, delaySeconds: number): Promise<void>;
-  clear(name: string): Promise<void>;
-}
-
-export type CloudFactory = (opts: {
-  refreshToken: string;
-  onTokenRefreshed(refreshToken: string): void;
-}) => CloudPort | null;
 
 export interface VaultDeps {
   session: KVStore;
