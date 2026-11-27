@@ -240,7 +240,7 @@ input[type='file'].file-input { display: none; } /* Picker per Button, Datei-Sta
   margin-bottom: 8px;
 }
 
-.unlock-card { margin-top: 30px; display: flex; flex-direction: column; }
+.unlock-card { display: flex; flex-direction: column; }
 
 /* ---------- Detail ---------- */
 
