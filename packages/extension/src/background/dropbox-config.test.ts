@@ -5,6 +5,7 @@ import {
   parseDropboxAppConfig,
   resolvedAppKey,
   setDropboxAppConfigCache,
+  setDropboxManagedConfigCache,
 } from './dropbox-config';
 
 describe('parseDropboxAppConfig', () => {
@@ -35,5 +36,13 @@ describe('Resolution-Order (ADR-012 > ADR-007)', () => {
     // Build-Injection ist in vitest undefiniert (typeof-Guard → '')
     expect(resolvedAppKey()).toBe('');
     expect(hasResolvedAppKey()).toBe(false);
+  });
+
+  it('Host-Deploy (managed) liegt zwischen Options und Build', () => {
+    setDropboxAppConfigCache({ appKey: '', appSecret: '' });
+    setDropboxManagedConfigCache({ appKey: 'managed-key', appSecret: '' });
+    expect(resolvedAppKey()).toBe('managed-key');
+    setDropboxAppConfigCache({ appKey: 'local-key', appSecret: '' });
+    expect(resolvedAppKey()).toBe('local-key');
   });
 });

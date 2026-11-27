@@ -23,6 +23,7 @@
     "default_title": "KDBX Keychain",
     "default_popup": "popup/index.html"
   },
+  "storage": { "managed_schema": "managed-schema.json" },
   "options_ui": {
     "page": "options/index.html"
   },

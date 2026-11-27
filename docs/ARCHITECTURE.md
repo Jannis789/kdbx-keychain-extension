@@ -155,6 +155,13 @@ Options-Pflege > Build-Default. Konsequenzen:
   braucht die `identity`-Permission, und `getRedirectURL()` liefert dort
   eine `https://<id>.extensions.allizom.org/`-URI (statt chromiumapp.org),
   die zusätzlich in der Dropbox-App-Konsole registriert werden muss.
+*Managed-Storage (Host-Deploy):* Dritte Stufe zwischen Options und
+Build-Default — `chrome.storage.managed` mit Schema (`managed-schema.json`,
+Manifest `storage.managed_schema`). Firefox liest
+`~/.mozilla/managed-storage/<id>.json` (nixOS: systemd user service schreibt
+es aus der agenix-Env), Chrome bekäme das `3rdparty`-Policy-Äquivalent
+(`/etc/opt/chrome/policies`). Resolution: Options-Pflege > Managed >
+Build-Injection.
 
 ## Sicherheitsmodell (Kurz-Threat-Modell)
 

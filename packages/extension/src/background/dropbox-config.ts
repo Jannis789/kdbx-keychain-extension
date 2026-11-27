@@ -40,7 +40,26 @@ export function setDropboxAppConfigCache(next: DropboxAppConfig): void {
   cache = parseDropboxAppConfig(next);
 }
 
+/** Host-Deploy (nix/Enterprise-Policy): chrome.storage.managed — unterste Storage-Stufe. */
+let managed: DropboxAppConfig = { appKey: '', appSecret: '' };
+
+export function setDropboxManagedConfigCache(next: DropboxAppConfig): void {
+  managed = parseDropboxAppConfig(next);
+}
+
+export function dropboxManagedConfig(): DropboxAppConfig {
+  return managed;
+}
+
 export async function loadDropboxAppConfig(): Promise<void> {
+  // Host-Level zuerst (nix/Enterprise-Policy) — Fehlen ist normal, kein Fehler.
+  await new Promise<void>((resolve) => {
+    chrome.storage.managed.get(['appKey', 'appSecret'], (res) => {
+      void chrome.runtime.lastError; // kein Managed-Deploy → bewusst ignorieren
+      setDropboxManagedConfigCache(parseDropboxAppConfig(res));
+      resolve();
+    });
+  });
   const stored = await chrome.storage.local.get(STORAGE_KEY);
   setDropboxAppConfigCache(parseDropboxAppConfig(stored[STORAGE_KEY]));
 }
@@ -57,13 +76,13 @@ export function dropboxAppConfig(): DropboxAppConfig {
   return cache;
 }
 
-/** Gestaffelt: Options-Pflege schlägt Build-Injection (ADR-012 > ADR-007). */
+/** Gestaffelt: Options-Pflege > Host-Deploy (managed) > Build-Injection (ADR-012). */
 export function resolvedAppKey(): string {
-  return cache.appKey || APP_KEY;
+  return dropboxAppConfig().appKey || managed.appKey || APP_KEY;
 }
 
 export function resolvedAppSecret(): string {
-  return cache.appSecret || APP_SECRET;
+  return dropboxAppConfig().appSecret || managed.appSecret || APP_SECRET;
 }
 
 export function hasResolvedAppKey(): boolean {

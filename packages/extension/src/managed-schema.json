@@ -1,0 +1,7 @@
+{
+  "type": "object",
+  "properties": {
+    "appKey": { "type": "string" },
+    "appSecret": { "type": "string" }
+  }
+}

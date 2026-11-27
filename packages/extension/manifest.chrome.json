@@ -11,6 +11,7 @@
     "default_popup": "popup/index.html"
   },
   "options_ui": { "page": "options/index.html", "open_in_tab": true },
+  "storage": { "managed_schema": "managed-schema.json" },
   "permissions": [
     "storage",
     "activeTab",

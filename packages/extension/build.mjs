@@ -37,6 +37,7 @@ const entryPoints = {
 };
 
 const staticFiles = (name) => [
+  ['managed-schema.json', 'managed-schema.json'], // ADR-012: Schema für chrome.storage.managed (Host-Deploy)
   ['popup/index.html', 'popup/index.html'],
   ['popup/style.css', 'popup/style.css'],
   ['options/index.html', 'options/index.html'],
