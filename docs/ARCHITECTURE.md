@@ -20,9 +20,9 @@ API-Differenzen. Ergebnis: zwei unabhängige Artefakte, keine Duplikation.
 
 ### ADR-002 — Konnektoren: Dropbox-API direkt (Extension), rclone (Desktop)
 - **Extension ↔ Dropbox REST:** OAuth 2.0 mit **PKCE**. Für PKCE wird das
-  App-Secret nicht gebraucht und taucht im Browser-Bundle nicht auf — nur der
-  App-Key (Build-Injection aus agenix-Env).
-- **Desktop ↔ Dropbox:** rclone bisync zwischen `dropbox:kdbx-keychain/` und
+  App-Secret nicht gebraucht und taucht im Browser-Bundle nicht auf — der
+  App-Key kommt zur Laufzeit (ADR-012: Options/Managed-Storage; die
+  frühere Build-Injection ist entfernt).- **Desktop ↔ Dropbox:** rclone bisync zwischen `dropbox:kdbx-keychain/` und
   `~/Cloud/kdbx-keychain/` (systemd user timer, deklarativ via NixOS).
 - **Verworfen fürs MVP:** Native-Messaging-Host für die Extension (Setup-Aufwand
   auf jedem Browser-Profil, kein Mehrwert, solange gsecrets über rclone bedient wird).
@@ -90,13 +90,10 @@ Eigener Content-Script-Ansatz statt iframe-Injection:
   OAuth-Redirect-URI `https://giaekmmanecjlcpifjmleemimokmeoka.chromiumapp.org/`
   (einmalig in der Dropbox-App-Konsole eintragen). Fallback ohne App-Console-
   Änderung: Refresh-Token in der Options-Seite importieren.
-- **Build-Defaults (Phase 3, deklaratives Setup):** aus derselben agenix-Env
-  werden zusätzlich `DEFAULT_REMOTE_PATH` (Ziel-Tresor) und optional
-  `DROPBOX_REFRESH_TOKEN` injiziert (`src/shared/build-defaults.ts`). Damit
-  ist die Extension nach dem Laden vorkonfiguriert: Pfad gesetzt, Dropbox
-  verbunden — es bleibt nur Master-Passwort + Keyfile (bewusst NICHT
-  injizierbar, ADR-004). Der Token liegt nur im lokalen `dist/`-Artefakt
-  (gitignored), nie im Repo.
+- **Build-Defaults (entfernt, ADR-012):** die frühere Injection von
+  `DEFAULT_REMOTE_PATH`/`DROPBOX_REFRESH_TOKEN` (`src/shared/build-defaults.ts`)
+  ist weg — dieselben Defaults kommen jetzt aus dem Managed-Storage-Host-Deploy.
+  Master-Passwort + Keyfile bleiben bewusst nicht injizierbar (ADR-004).
 - `nixos-configuration/secrets/dropbox-keychain-env.age` (Format: export-Zeilen):
   `DROPBOX_APP_KEY`, `DROPBOX_APP_SECRET`, `KDBX_TEST_PASSWORD`.
 - Die Test-kdbx liegt **nicht** im Repo; Passwort steht in agenix. Reale Datenbanken
@@ -145,8 +142,10 @@ imperativer DOM-Code mehr. Ziel ist „mehr HTML als JS-Ausdrücke“:
 ### ADR-012 — Dropbox-Credentials zur Laufzeit pflegen (Options + Storage)
 App-Key/-Secret werden in der Options-Seite gepflegt und liegen in
 `chrome.storage.local` (`kdbx.dropboxApp`) — nie im Bundle. Die
-Build-Injection (ADR-007) bleibt Dev-Prefill/Fallback; Resolution-Order:
-Options-Pflege > Build-Default. Konsequenzen:
+Build-Injection (ADR-007) ist damit vollständig entfernt
+(`app-key.ts`/`build-defaults.ts` gelöscht, kein esbuild-`define` mehr);
+jedes Bundle — auch Dev — ist secret-frei. Resolution-Order:
+Options-Pflege > Managed-Storage > Repo-Defaults. Konsequenzen:
 - Release-Builds (AMO) werden „naiv" gebaut — keine Secrets im Artefakt.
 - Die synchrone CloudFactory liest einen Cache, der vor der ersten
   Vault-Init geladen ist (`VaultDeps.ready`); `SET_DROPBOX_APP` wirft die
@@ -155,13 +154,14 @@ Options-Pflege > Build-Default. Konsequenzen:
   braucht die `identity`-Permission, und `getRedirectURL()` liefert dort
   eine `https://<id>.extensions.allizom.org/`-URI (statt chromiumapp.org),
   die zusätzlich in der Dropbox-App-Konsole registriert werden muss.
-*Managed-Storage (Host-Deploy):* Dritte Stufe zwischen Options und
-Build-Default — `chrome.storage.managed` mit Schema (`managed-schema.json`,
-Manifest `storage.managed_schema`). Firefox liest
-`~/.mozilla/managed-storage/<id>.json` (nixOS: systemd user service schreibt
-es aus der agenix-Env), Chrome bekäme das `3rdparty`-Policy-Äquivalent
-(`/etc/opt/chrome/policies`). Resolution: Options-Pflege > Managed >
-Build-Injection.
+*Managed-Storage (Host-Deploy):* Unterste Stufe — `chrome.storage.managed`
+mit Schema (`managed-schema.json`, Manifest `storage.managed_schema`),
+umfasst appKey/appSecret/refreshToken/remotePath. Firefox liest
+`~/.mozilla/managed-storage/<id>.json` (nixOS: `home.activation` schreibt es
+lazy aus der agenix-Env — pro Key nur ergänzen, nie überschreiben), Chrome
+bekäme das `3rdparty`-Policy-Äquivalent (`/etc/opt/chrome/policies`).
+Vault-Seed (`VaultDeps.seed`) bezieht refreshToken/remotePath daraus und
+wird erst nach dem Ladeversprechen (`VaultDeps.ready`) ausgewertet.
 
 ## Sicherheitsmodell (Kurz-Threat-Modell)
 

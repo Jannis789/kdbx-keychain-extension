@@ -2,6 +2,8 @@
   "type": "object",
   "properties": {
     "appKey": { "type": "string" },
-    "appSecret": { "type": "string" }
+    "appSecret": { "type": "string" },
+    "refreshToken": { "type": "string" },
+    "remotePath": { "type": "string" }
   }
 }

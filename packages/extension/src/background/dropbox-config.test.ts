@@ -4,6 +4,8 @@ import {
   mergeDropboxAppConfig,
   parseDropboxAppConfig,
   resolvedAppKey,
+  resolvedRefreshToken,
+  resolvedRemotePath,
   setDropboxAppConfigCache,
   setDropboxManagedConfigCache,
 } from './dropbox-config';
@@ -38,10 +40,17 @@ describe('Resolution-Order (ADR-012 > ADR-007)', () => {
     expect(hasResolvedAppKey()).toBe(false);
   });
 
-  it('Host-Deploy (managed) liegt zwischen Options und Build', () => {
+  it('Host-Deploy (managed) liegt zwischen Options und Unterebene', () => {
     setDropboxAppConfigCache({ appKey: '', appSecret: '' });
-    setDropboxManagedConfigCache({ appKey: 'managed-key', appSecret: '' });
+    setDropboxManagedConfigCache({
+      appKey: 'managed-key',
+      appSecret: '',
+      refreshToken: 'rt-host',
+      remotePath: '/host.kdbx',
+    });
     expect(resolvedAppKey()).toBe('managed-key');
+    expect(resolvedRefreshToken()).toBe('rt-host');
+    expect(resolvedRemotePath()).toBe('/host.kdbx');
     setDropboxAppConfigCache({ appKey: 'local-key', appSecret: '' });
     expect(resolvedAppKey()).toBe('local-key');
   });

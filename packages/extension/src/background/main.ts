@@ -8,6 +8,7 @@ import { CLIPBOARD_CLEAR_ALARM, clearClipboardIfExpected } from './clipboard';
 import { chromeAlarms, chromeKV } from './ports';
 import { createRouter, matchAndFillActiveTab } from './router';
 import {
+  dropboxManagedConfig,
   hasResolvedAppKey,
   loadDropboxAppConfig,
   resolvedAppKey,
@@ -35,6 +36,11 @@ const vault = new Vault({
   cloudFactory,
   // Credentials laden, BEVOR init()/cloudFactory greift (Reihenfolge-Garantie).
   ready: loadDropboxAppConfig(),
+  // Host-Seed (ADR-012): erst NACH `ready` auslesen — der Cache ist dann voll.
+  seed: () => {
+    const managed = dropboxManagedConfig();
+    return { refreshToken: managed.refreshToken, remotePath: managed.remotePath };
+  },
 });
 
 const route = createRouter(vault);

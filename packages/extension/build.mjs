@@ -4,9 +4,6 @@
  *
  *   node build.mjs chrome|firefox|all
  *
- * ADR-007: __DROPBOX_APP_KEY__ wird aus der Umgebung (DROPBOX_APP_KEY,
- * z. B. aus /run/agenix/dropbox-keychain-env) injiziert. Ohne Env bleibt
- * der Platzhalter stehen — Connect-Funktionen lehnen dann ab.
  * Output: dist/chrome, dist/firefox (unpacked, load-ready).
  */
 import { build } from 'esbuild';
@@ -16,14 +13,6 @@ import { fileURLToPath } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const src = join(here, 'src');
-
-const APP_KEY = process.env.DROPBOX_APP_KEY ?? '';
-if (!APP_KEY || APP_KEY.startsWith('__')) {
-  console.warn('⚠  Kein DROPBOX_APP_KEY gesetzt — Placeholder bleibt im Bundle (ADR-007).');
-}
-const APP_SECRET = process.env.DROPBOX_APP_SECRET ?? '';
-const REMOTE_PATH = process.env.DEFAULT_REMOTE_PATH ?? '';
-const REFRESH_TOKEN = process.env.DROPBOX_REFRESH_TOKEN ?? '';
 
 const target = process.argv[2] ?? 'all';
 const targets = target === 'all' ? ['chrome', 'firefox'] : [target];
@@ -75,10 +64,6 @@ for (const name of targets) {
       crypto: join(src, 'shims/crypto-shim.ts'),
     },
     define: {
-      __DROPBOX_APP_KEY__: JSON.stringify(APP_KEY),
-      __DROPBOX_APP_SECRET__: JSON.stringify(APP_SECRET),
-      __DEFAULT_REMOTE_PATH__: JSON.stringify(REMOTE_PATH),
-      __DROPBOX_REFRESH_TOKEN__: JSON.stringify(REFRESH_TOKEN),
       'process.env.NODE_ENV': JSON.stringify('production'),
     },
   });

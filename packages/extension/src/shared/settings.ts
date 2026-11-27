@@ -3,8 +3,6 @@
  * Dropbox-Pfad. Bewusst pure — Normalisierung testbar ohne Browser.
  */
 
-import { BUILD_DEFAULT_REMOTE_PATH } from './build-defaults';
-
 export interface Settings {
   /** Minuten Inaktivität bis Auto-Lock; 0 = nie (ADR-004: Default 15). */
   autoLockMinutes: number;
@@ -17,8 +15,9 @@ export interface Settings {
 export const DEFAULT_SETTINGS: Settings = {
   autoLockMinutes: 15,
   clipboardClearSeconds: 20,
-  // Build-Injection (ADR-007): Ziel-Tresor aus der agenix-Env, sonst Repo-Default
-  remotePath: BUILD_DEFAULT_REMOTE_PATH ?? '/kdbx-keychain/test.kdbx',
+  // Repo-Fallback; Host-Deploy (ADR-012, managed.remotePath) übersteuert via
+  // Seed vor mergeSettings — siehe vault.doInit.
+  remotePath: '/kdbx-keychain/test.kdbx',
 };
 
 function clampInt(value: unknown, min: number, max: number, fallback: number): number {

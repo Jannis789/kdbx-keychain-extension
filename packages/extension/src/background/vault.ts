@@ -24,7 +24,6 @@ import type {
   UnlockedDatabase,
 } from '@kdbx-keychain/core';
 import { decodeBase64, encodeBase64 } from '../shared/base64';
-import { BUILD_REFRESH_TOKEN } from '../shared/build-defaults';
 import type { CopyableField, Snapshot, SyncInfo, TotpInfo } from '../shared/messages';
 import { DEFAULT_SETTINGS, mergeSettings, type Settings } from '../shared/settings';
 
@@ -52,6 +51,8 @@ export interface VaultDeps {
   cloudFactory: CloudFactory;
   /** ADR-012: Dropbox-Credentials-Cache muss vor erster Factory-Nutzung geladen sein. */
   ready?: Promise<void>;
+  /** ADR-012: Host-Defaults aus Managed — erst NACH `ready` auswerten! */
+  seed?: () => { refreshToken: string; remotePath: string };
   now?(): number;
 }
 
@@ -127,18 +128,23 @@ export class Vault {
 
   private async doInit(): Promise<void> {
     await this.deps.ready;
+    // Host-Seed (ADR-012): Managed-Defaults ersetzen die alte Build-Injection —
+    // remotePath als Settings-Default, Token nur beim Erst-Import.
+    const seed = this.deps.seed?.() ?? { refreshToken: '', remotePath: '' };
+    const defaults: Settings = seed.remotePath
+      ? { ...DEFAULT_SETTINGS, remotePath: seed.remotePath }
+      : DEFAULT_SETTINGS;
     this.settings = mergeSettings(
-      DEFAULT_SETTINGS,
+      defaults,
       (await this.deps.local.get(KEY.settings)) as Partial<Settings> | undefined ?? {},
     );
     const rev = await this.deps.local.get(KEY.rev);
     this.rev = typeof rev === 'string' ? rev : '';
     const token = await this.deps.local.get(KEY.token);
     this.refreshToken = typeof token === 'string' ? token : '';
-    // Build-Seed (ADR-007): noch nie verbunden + Token im Bundle injiziert
-    // → Dropobox-Verbindung ist ab Erst-Build da, ohne manuellen Import.
-    if (!this.refreshToken && BUILD_REFRESH_TOKEN) {
-      this.refreshToken = BUILD_REFRESH_TOKEN;
+    // Host-Seed (ADR-012): Refresh-Token aus Managed — nur Erst-Import.
+    if (!this.refreshToken && seed.refreshToken) {
+      this.refreshToken = seed.refreshToken;
       await this.deps.local.set(KEY.token, this.refreshToken);
     }
     const lastSync = await this.deps.local.get(KEY.lastSync);
