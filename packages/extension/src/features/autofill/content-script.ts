@@ -2,7 +2,7 @@
  * Content-Script (ADR-006): füllt NUR auf explizite Anweisung des Backgrounds
  * (User-Intent via Popup/Kontextmenü/Shortcut) — kein Scanning beim Laden.
  */
-import { pickLoginFields, type FieldDescriptor } from '../shared/autofill';
+import { pickLoginFields, type FieldDescriptor } from './pick-fields';
 
 interface FillDomPayload {
   type: 'FILL_INTO_DOM';

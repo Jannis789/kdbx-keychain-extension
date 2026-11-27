@@ -6,7 +6,7 @@ import {
   resolvedAppSecret,
   resolvedRefreshToken,
   resolvedRemotePath,
-} from './dropbox-config';
+} from './credentials';
 
 const STORAGE_KEY = 'kdbx.dropboxApp';
 

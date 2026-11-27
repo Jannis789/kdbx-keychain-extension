@@ -1,5 +1,5 @@
 /** RPC-Helfer für UI-Kontexte (Popup/Options): Message rein, Daten raus. */
-import type { RuntimeMessage, RuntimeResponse } from './messages';
+import type { RuntimeMessage, RuntimeResponse } from '../shared/messages';
 
 export async function callBackground<T>(message: RuntimeMessage): Promise<T> {
   const res = (await chrome.runtime.sendMessage(message)) as RuntimeResponse<T> | undefined;

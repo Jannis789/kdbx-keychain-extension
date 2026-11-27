@@ -24,9 +24,9 @@ import type {
   UnlockOptions,
   UnlockedDatabase,
 } from '@kdbx-keychain/core';
-import { decodeBase64, encodeBase64 } from '../shared/base64';
-import type { CopyableField, Snapshot, SyncInfo, TotpInfo } from '../shared/messages';
-import { DEFAULT_SETTINGS, mergeSettings, type Settings } from '../shared/settings';
+import { decodeBase64, encodeBase64 } from '../../shared/base64';
+import type { CopyableField, Snapshot, SyncInfo, TotpInfo } from '../../shared/messages';
+import { DEFAULT_SETTINGS, mergeSettings, type Settings } from '@kdbx-keychain/core';
 
 export interface KVStore {
   get(key: string): Promise<unknown>;

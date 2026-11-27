@@ -6,7 +6,19 @@
  * bewusst ohne DOM-Lib-Abhängigkeit (strukturierte Minimal-Typen).
  */
 
-import type { TotpAlgorithm, TotpConfig } from './types';
+export type TotpAlgorithm = 'SHA1' | 'SHA256' | 'SHA512';
+
+export interface TotpConfig {
+  /** Base32-Secret (ohne Leerzeichen). */
+  secret: string;
+  /** 6 oder 8 Stellen (KeePassXC-üblich). */
+  digits: number;
+  /** Gültigkeitsfenster in Sekunden (üblich 30). */
+  period: number;
+  algorithm: TotpAlgorithm;
+  /** Optionales Label (Issuer), nur für die Anzeige. */
+  label?: string;
+}
 
 const BASE32_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
 

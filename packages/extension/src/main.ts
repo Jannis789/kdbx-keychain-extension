@@ -3,8 +3,9 @@
  * Vault + Router + Kontextmenü + Shortcut.
  */
 import { createKdbxDatabasePort, DropboxCloud } from '@kdbx-keychain/core';
-import { AUTO_LOCK_ALARM, Vault, type CloudFactory } from './vault';
-import { chromeAlarms, chromeKV } from './ports';
+import { AUTO_LOCK_ALARM, Vault, type CloudFactory } from './features/vault/vault';
+import { chromeAlarms } from './platform/alarms';
+import { chromeKV } from './platform/storage';
 import { createRouter, matchAndFillActiveTab } from './router';
 import {
   hasResolvedAppKey,
@@ -13,8 +14,8 @@ import {
   resolvedAppSecret,
   resolvedRefreshToken,
   resolvedRemotePath,
-} from './dropbox-config';
-import type { RuntimeMessage } from '../shared/messages';
+} from './features/sync/credentials';
+import type { RuntimeMessage } from './shared/messages';
 
 const cloudFactory: CloudFactory = ({ refreshToken, onTokenRefreshed }) => {
   // ADR-012: Options-Pflege schlägt Build-Injection (dropbox-config-Resolution).

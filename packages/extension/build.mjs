@@ -18,17 +18,19 @@ const target = process.argv[2] ?? 'all';
 const targets = target === 'all' ? ['chrome', 'firefox'] : [target];
 
 const entryPoints = {
-  background: join(src, 'background/main.ts'),
-  content: join(src, 'content/content.ts'),
-  'popup/popup': join(src, 'popup/popup.tsx'),
-  'options/options': join(src, 'options/options.ts'),
+  background: join(src, 'main.ts'),
+  content: join(src, 'features/autofill/content-script.ts'),
+  'popup/popup': join(src, 'ui/popup/app.tsx'),
+  'options/options': join(src, 'ui/options/options.ts'),
 };
 
 const staticFiles = (name) => [
-  ['managed-schema.json', 'managed-schema.json'], // ADR-012: Schema für chrome.storage.managed (Host-Deploy)
-  ['popup/index.html', 'popup/index.html'],
-  ['popup/style.css', 'popup/style.css'],
-  ['options/index.html', 'options/index.html'],
+  // ADR-012: Schema für chrome.storage.managed (Host-Deploy)
+  ['../assets/managed-schema.json', 'managed-schema.json'],
+  // Quelle liegt im UI-Ordner, im Bundle bleibt der Pfad wie im Manifest.
+  ['ui/popup/index.html', 'popup/index.html'],
+  ['ui/popup/style.css', 'popup/style.css'],
+  ['ui/options/index.html', 'options/index.html'],
 ];
 
 function copyStatic(out, name) {
@@ -58,7 +60,7 @@ for (const name of targets) {
     alias: {
       // kdbxweb-UMD externals: Node-'crypto' → WebCrypto-Stub; @xmldom/xmldom
       // wird als echtes Paket gebundelt (SW hat keinen DOMParser).
-      crypto: join(src, 'shims/crypto-shim.ts'),
+      crypto: join(here, '../core/src/shims/crypto-shim.ts'),
     },
     define: {
       'process.env.NODE_ENV': JSON.stringify('production'),

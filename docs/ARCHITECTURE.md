@@ -9,6 +9,37 @@
 | `~/Cloud/kdbx-keychain/` | lokale Kopie der DB (rclone), die GNOME Secrets öffnet |
 | `nixos-configuration` (separates Repo) | agenix-Secrets, rclone-Service (Phase 2), gsecrets-Installation (Phase 5) |
 
+## Projektstruktur
+
+Feature-first, MVC nur als Rolle — nicht als Ordner-Trias. Ein `controllers/`
++ `models/` + `views/`-Baum verteilt eine Änderung über fünf Verzeichnisse;
+hier liegt sie in einem Feature.
+
+```
+packages/core/src/          # Domäne, browser-frei, ohne chrome.*
+├── model/                  # entry, totp, matching, settings, unlock
+├── ports/                  # database, cloud (Schnittstellen)
+├── adapters/               # kdbx (kdbxweb), dropbox (REST + PKCE)
+└── shims/                  # crypto-shim für kdbxwebs Node-Import
+
+packages/extension/src/
+├── main.ts                 # Background-Einstieg: nur Wiring + Listener
+├── router.ts               # CONTROLLER: Message → Feature
+├── features/               # vertikale Schnitte (Model + Use-Cases)
+│   ├── vault/              # vault.ts + ports.ts (KVStore/AlarmScheduler)
+│   ├── sync/               # credentials, oauth, cloudFactory
+│   ├── unlock/             # native-keyfile (NMH, agenix)
+│   └── autofill/           # pick-fields (pure) + content-script (DOM)
+├── ui/                     # VIEW: popup/, options/ (je Surface)
+├── platform/               # Adapter: storage, alarms, tabs, ipc, wrap
+└── shared/                 # Verträge + Utilities: messages, base64
+```
+
+Regeln: `ui/*` liest Snapshots und schickt Messages — nie `chrome.storage`.
+`chrome.*` und HTTP existieren nur in `platform/` und `core/adapters/`.
+`shared/` ist kein Sammelbecken: dort landet nur, was zwei Features brauchen
+und keine Domäne hat.
+
 ## Entscheidungsrecords (ADR)
 
 ### ADR-001 — Monorepo, eine Codebasis, zwei Extensions

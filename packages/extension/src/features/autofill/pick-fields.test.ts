@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { pickLoginFields, type FieldDescriptor } from './autofill';
+import { pickLoginFields, type FieldDescriptor } from './pick-fields';
 
 function field(partial: Partial<FieldDescriptor>): FieldDescriptor {
   return {

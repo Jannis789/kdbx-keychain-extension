@@ -1,6 +1,6 @@
 /** Options-Seite (Phase 3): Dropbox-Verbindung + Auto-Lock/Pfad. */
-import { callBackground } from '../shared/ipc';
-import type { Snapshot } from '../shared/messages';
+import { callBackground } from '../../platform/ipc';
+import type { Snapshot } from '../../shared/messages';
 
 const $ = <T extends HTMLElement>(id: string): T => document.getElementById(id) as T;
 

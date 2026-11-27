@@ -4,7 +4,7 @@
  * der vom Router bewusst NICHT beantwortet wird.
  */
 import type { EntryFields, KeychainEntry } from '@kdbx-keychain/core';
-import type { Settings } from './settings';
+import type { Settings } from '@kdbx-keychain/core';
 
 export type CopyableField = 'username' | 'password' | 'totp' | `custom:${string}`;
 

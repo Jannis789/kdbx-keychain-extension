@@ -9,8 +9,8 @@
  * erwarteter rev — bei Fremd-Änderung (409) wird die aktuelle rev gelesen
  * und als Konflikt zurückgegeben, nie still überschrieben.
  */
-import { subtle } from '../totp';
-import type { CloudPort, CloudPutResult } from '../types';
+import { subtle } from '../model/totp';
+import type { CloudPort, CloudPutResult } from '../ports/cloud';
 
 const TOKEN_URL = 'https://api.dropboxapi.com/oauth2/token';
 const AUTH_URL = 'https://www.dropbox.com/oauth2/authorize';

@@ -3,7 +3,7 @@ import {
   createEmptyDatabase,
   createKdbxDatabasePort,
   type UnlockedDatabase,
-} from './index';
+} from '../index';
 
 const MASTER = 'test-master-pw';
 const TOTP_SECRET = 'GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ'; // RFC-6238-Secret

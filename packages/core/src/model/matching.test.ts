@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { registrableDomain, sameSite } from './url-matching';
+import { registrableDomain, sameSite } from './matching';
 
 describe('registrableDomain', () => {
   it('URL → registrable Domain', () => {

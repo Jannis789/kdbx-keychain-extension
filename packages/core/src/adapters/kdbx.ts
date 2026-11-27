@@ -12,18 +12,12 @@
  */
 import { argon2d, argon2id } from 'hash-wasm';
 import * as kdbxwebModule from 'kdbxweb';
-import { buildOtpUri, generateTotp, parseLegacyTotp, parseOtpUri } from '../totp';
-import { sameSite } from '../url-matching';
-import type {
-  CustomField,
-  DatabasePort,
-  EntryFields,
-  EntryPatch,
-  KeychainEntry,
-  TotpConfig,
-  UnlockOptions,
-  UnlockedDatabase,
-} from '../types';
+import type { CustomField, EntryFields, EntryPatch, KeychainEntry } from '../model/entry';
+import { sameSite } from '../model/matching';
+import { buildOtpUri, generateTotp, parseLegacyTotp, parseOtpUri } from '../model/totp';
+import type { TotpConfig } from '../model/totp';
+import type { UnlockOptions } from '../model/unlock';
+import type { DatabasePort, UnlockedDatabase } from '../ports/database';
 
 // ---------- strukturierte kdbxweb-Typbilder ----------
 

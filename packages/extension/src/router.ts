@@ -8,16 +8,16 @@ import type {
   RuntimeResponse,
   Snapshot,
   TotpInfo,
-} from '../shared/messages';
-import { connectDropboxPkce, dropboxRedirectUri } from './oauth';
-import { dropboxAppConfig, saveDropboxAppConfig } from './dropbox-config';
-import { fetchKeyfileViaNative } from './native';
+} from './shared/messages';
+import { connectDropboxPkce, dropboxRedirectUri } from './features/sync/oauth';
+import { dropboxAppConfig, saveDropboxAppConfig } from './features/sync/credentials';
+import { fetchKeyfileViaNative } from './features/unlock/native-keyfile';
 import {
   ensureContentScript,
   getActiveTab,
   sendTabMessage,
-} from './ports';
-import type { Vault } from './vault';
+} from './platform/tabs';
+import type { Vault } from './features/vault/vault';
 
 function ok<T>(data: T): RuntimeResponse<T> {
   return { ok: true, data };

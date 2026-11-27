@@ -16,7 +16,7 @@ import type {
   UnlockOptions,
   UnlockedDatabase,
 } from '@kdbx-keychain/core';
-import { encodeBase64 } from '../shared/base64';
+import { encodeBase64 } from '../../shared/base64';
 import {
   AUTO_LOCK_ALARM,
   Vault,

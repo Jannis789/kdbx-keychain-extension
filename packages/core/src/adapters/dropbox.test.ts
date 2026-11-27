@@ -5,7 +5,7 @@ import {
   exchangeCode,
   generatePkce,
 } from './dropbox';
-import { subtle } from '../totp';
+import { subtle } from '../model/totp';
 
 /** Fake-fetch: erste passende Route gewinnt. */
 function router(routes: Array<{ match: string; handle: (url: string, init?: RequestInit) => Response }>) {

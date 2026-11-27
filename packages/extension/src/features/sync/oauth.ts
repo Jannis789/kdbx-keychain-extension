@@ -9,8 +9,8 @@
  * die URI in der Dropbox-App-Konsole einmalig eingetragen werden kann.
  */
 import { buildAuthUrl, exchangeCode, generatePkce } from '@kdbx-keychain/core';
-import { hasResolvedAppKey, resolvedAppKey } from './dropbox-config';
-import type { Vault } from './vault';
+import { hasResolvedAppKey, resolvedAppKey } from './credentials';
+import type { Vault } from '../vault/vault';
 
 export function dropboxRedirectUri(): string {
   return chrome.identity.getRedirectURL();

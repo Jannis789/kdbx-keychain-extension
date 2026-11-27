@@ -20,8 +20,8 @@ import {
   type KeychainEntry,
   type TotpConfig,
 } from '@kdbx-keychain/core';
-import { encodeBase64 } from '../shared/base64';
-import { callBackground } from '../shared/ipc';
+import { encodeBase64 } from '../../shared/base64';
+import { callBackground } from '../../platform/ipc';
 import {
   VAULT_SVG,
   KEY_SVG,
@@ -34,7 +34,7 @@ import {
   EYE_SVG,
   COPY_SVG,
 } from './icons';
-import type { CopyableField, FillResult, Snapshot, TotpInfo } from '../shared/messages';
+import type { CopyableField, FillResult, Snapshot, TotpInfo } from '../../shared/messages';
 
 type View = 'locked' | 'list' | 'detail' | 'edit';
 

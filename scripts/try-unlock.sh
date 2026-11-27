@@ -52,6 +52,6 @@ EOF
 
 KDBX_PATH="$KDBX" KEY_PATH="$KEY" KDBX_PW="$PW" \
   npx esbuild "$TRY_TS" --bundle --platform=node \
-  "--alias:crypto=$PWD/packages/extension/src/shims/crypto-shim.ts" \
+  "--alias:crypto=$PWD/packages/core/src/shims/crypto-shim.ts" \
   --outfile="$TMPDIR_RUN/try.js" --format=esm --log-level=error
 KDBX_PATH="$KDBX" KEY_PATH="$KEY" KDBX_PW="$PW" "$NODE" "$TMPDIR_RUN/try.js"
