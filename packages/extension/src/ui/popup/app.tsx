@@ -439,6 +439,7 @@ function ListView({
 }) {
   const [entries, setEntries] = useState<KeychainEntry[]>([]);
   const [matchIds, setMatchIds] = useState<Set<string>>(new Set());
+  const [tabHost, setTabHost] = useState<string | null>(null);
   const notify = useContext(NotifyCtx);
   const sync = snapshot.sync;
 
@@ -457,13 +458,18 @@ function ListView({
           const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
           if (tab?.url) {
             const m = await callBackground<{ entries: KeychainEntry[] }>({ type: 'MATCH_URL', url: tab.url });
-            if (!cancelled) setMatchIds(new Set(m.entries.map((x) => x.id)));
+            if (cancelled) return;
+            setMatchIds(new Set(m.entries.map((x) => x.id)));
+            setTabHost(hostOf(tab.url));
             return;
           }
         } catch {
           // Kein Tab-Kontext (z. B. DevTools) — dann ohne Matches.
         }
-        if (!cancelled) setMatchIds(new Set());
+        if (!cancelled) {
+          setMatchIds(new Set());
+          setTabHost(null);
+        }
       } catch (e) {
         if (!cancelled) notify(errorText(e));
       }
@@ -474,7 +480,15 @@ function ListView({
     };
   }, [query, reload, notify]);
 
-  const totp = useTotpCodes(entries.filter((e) => e.fields.totp).map((e) => e.id));
+  /**
+   * Start-Ansicht = Logins dieser Seite (ADR-006): ohne Suchbegriff zeigt die
+   * Liste nur die URI-Treffer; sobald man tippt, wird der ganze Tresor
+   * durchsucht. Ohne Treffer bleibt die volle Liste stehen (nie leeres Popup).
+   */
+  const scoped = query.trim() === '' && matchIds.size > 0;
+  const visible = scoped ? entries.filter((e) => matchIds.has(e.id)) : entries;
+
+  const totp = useTotpCodes(visible.filter((e) => e.fields.totp).map((e) => e.id));
 
   const syncStatus = !sync.connected
     ? 'nicht verbunden'
@@ -548,19 +562,25 @@ function ListView({
         </div>
       </div>
       <ul class="entry-list">
-        {entries.map((entry) => {
+        {scoped && (
+          <li class="list-scope">
+            ✦ {visible.length} {visible.length === 1 ? 'Login' : 'Logins'} für {tabHost} — tippen
+            durchsucht alles
+          </li>
+        )}
+        {visible.map((entry) => {
           const info = totp.get(entry.id);
           return (
             <EntryCard
               key={entry.id}
               entry={entry}
-              matches={matchIds.has(entry.id)}
+              matches={!scoped && matchIds.has(entry.id)}
               {...(info ? { totp: info } : {})}
               onOpen={() => onOpen(entry.id)}
             />
           );
         })}
-        {entries.length === 0 && <li class="dim empty">Keine Einträge.</li>}
+        {visible.length === 0 && <li class="dim empty">Keine Einträge.</li>}
       </ul>
     </>
   );
