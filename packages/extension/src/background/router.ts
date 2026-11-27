@@ -105,8 +105,13 @@ export function createRouter(vault: Vault): Route {
         case 'PREFILL_KEYFILE': {
           // ADR-010: Keyfile-Bytes aus dem Native-Host (agenix) — weiches
           // Fallback: kein Host → leeres Objekt + Diagnose-Text → Popup.
-          const { b64, error } = await fetchKeyfileViaNative();
-          return ok(b64 ? { b64, source: 'native' } : { ...(error ? { error } : {}) });
+          const { b64, path, error } = await fetchKeyfileViaNative();
+          const name = path ? path.split('/').pop() : undefined;
+          return ok(
+            b64
+              ? { b64, source: 'native', ...(name ? { name } : {}) }
+              : { ...(error ? { error } : {}) },
+          );
         }
         case 'CREATE_ENTRY': {
           const entry = await vault.createEntry(message.fields as EntryFields);

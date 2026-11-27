@@ -13,6 +13,7 @@ const HOST_NAME = 'kdbx_keychain_keyfile';
 
 export interface NativeKeyfile {
   b64: string | null;
+  path?: string;
   error?: string;
 }
 
@@ -48,9 +49,9 @@ export function fetchKeyfileViaNative(timeoutMs = 3000): Promise<NativeKeyfile> 
       done({ b64: null, error: `connect: ${(e as Error).message}` });
       return;
     }
-    port.onMessage.addListener((msg: { ok?: boolean; b64?: string }) => {
+    port.onMessage.addListener((msg: { ok?: boolean; b64?: string; path?: string }) => {
       if (msg?.ok && typeof msg.b64 === 'string' && msg.b64 !== '') {
-        done({ b64: msg.b64 });
+        done({ b64: msg.b64, path: typeof msg.path === 'string' ? msg.path : undefined });
       } else {
         done({ b64: null, error: 'host antwortete ohne Keyfile' });
       }

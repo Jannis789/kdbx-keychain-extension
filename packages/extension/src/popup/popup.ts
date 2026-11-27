@@ -184,11 +184,19 @@ function renderLocked(): void {
     placeholder: 'Master-Passwort',
     autocomplete: 'off',
   }) as HTMLInputElement;
-  const keyName = h('span', { class: 'dim' }, 'keine .key-Datei');
+  const keyName = h('span', { class: 'dim key-status' }, 'Keyfile: keine gewählt');
   const keyInput = h('input', { type: 'file', accept: '.key,.keyx', class: 'file-input' }) as HTMLInputElement;
   keyInput.addEventListener('change', () => {
-    keyName.textContent = keyInput.files?.[0]?.name ?? 'keine .key-Datei';
+    const f = keyInput.files?.[0];
+    if (f) {
+      keyName.textContent = `Keyfile: ${f.name}`;
+      keyName.title = '';
+      keyName.classList.add('key-status-ok');
+    }
   });
+  // Native File-Picker-UI ("Browse… No File Selected") ist verwirrend — der
+  // Button öffnet den Picker, der Status zeigt gewählte/vorausgefüllte Datei.
+  const keyBtn = button('Key-Datei wählen…', 'btn', () => keyInput.click());
   const errBox = h('div', { class: 'banner danger', hidden: 'true' });
   const unlockBtn = button('Entsperren', 'btn primary wide', doUnlock);
   pw.addEventListener('keydown', (e) => {
@@ -238,6 +246,7 @@ function renderLocked(): void {
   const prefillPromise: Promise<unknown> = callBackground<{
     b64?: string;
     source?: string;
+    name?: string;
     error?: string;
   }>({
     type: 'PREFILL_KEYFILE',
@@ -245,7 +254,8 @@ function renderLocked(): void {
     .then((res) => {
       if (res.b64) {
         prefilledKeyB64 = res.b64;
-        keyName.textContent = 'vorausgefüllt (agenix)';
+        keyName.textContent = `Keyfile: ${res.name ?? 'export.key'} (vorausgefüllt, agenix)`;
+        keyName.classList.add('key-status-ok');
       } else if (res.error) {
         nativeKeyError = res.error;
         keyName.textContent = 'Keyfile nicht verfügbar (native)';
@@ -261,7 +271,7 @@ function renderLocked(): void {
   card.append(
     h('h2', {}, 'Tresor entsperren'),
     h('label', { class: 'field' }, 'Master-Passwort', pw),
-    h('div', { class: 'field' }, keyInput, keyName),
+    h('div', { class: 'field' }, h('div', { class: 'key-row' }, keyBtn, keyName), keyInput),
     errBox,
     unlockBtn,
   );
