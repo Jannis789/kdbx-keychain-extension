@@ -312,3 +312,15 @@ hr { border: none; border-top: 1px solid var(--border); margin: 8px 0; }
 }
 
 .dim { color: var(--fg-dim); }
+
+/* Lade-Spinner (Unlock, langlaufende Aktionen): reiner CSS-Ring. */
+.spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }

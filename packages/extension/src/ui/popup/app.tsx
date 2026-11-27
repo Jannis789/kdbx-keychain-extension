@@ -412,7 +412,7 @@ function LockedView({ snapshot, onUnlocked }: { snapshot: Snapshot | null; onUnl
       </div>
       {error && <Banner kind="danger">{error}</Banner>}
       <button type="button" class="btn primary wide" disabled={busy} onClick={() => void unlock()}>
-        Entsperren
+        {busy ? <span class="spinner" aria-label="Entsperre…" /> : "Entsperren"}
       </button>
     </div>
   );
