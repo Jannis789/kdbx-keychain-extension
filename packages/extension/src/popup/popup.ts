@@ -184,6 +184,11 @@ function renderLocked(): void {
     placeholder: 'Master-Passwort',
     autocomplete: 'off',
   }) as HTMLInputElement;
+  // Beide Dateinamen sichtbar: Tresor (aus remotePath) + Keyfile (vorausgefüllt oder gewählt).
+  const vaultPath = state.snapshot?.settings.remotePath ?? '';
+  const vaultName = vaultPath.split('/').pop() || 'export.kdbx';
+  const vaultInfo = h('span', { class: 'key-status' }, `Tresor: ${vaultName}`);
+  if (vaultPath) vaultInfo.title = vaultPath;
   const keyName = h('span', { class: 'dim key-status' }, 'Keyfile: keine gewählt');
   const keyInput = h('input', { type: 'file', accept: '.key,.keyx', class: 'file-input' }) as HTMLInputElement;
   keyInput.addEventListener('change', () => {
@@ -271,7 +276,7 @@ function renderLocked(): void {
   card.append(
     h('h2', {}, 'Tresor entsperren'),
     h('label', { class: 'field' }, 'Master-Passwort', pw),
-    h('div', { class: 'field' }, h('div', { class: 'key-row' }, keyBtn, keyName), keyInput),
+    h('div', { class: 'field' }, vaultInfo, h('div', { class: 'key-row' }, keyBtn, keyName), keyInput),
     errBox,
     unlockBtn,
   );
