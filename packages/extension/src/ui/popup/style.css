@@ -69,7 +69,7 @@ h2 { font-size: 14px; font-weight: 700; margin: 0 0 10px; }
 
 .header-actions { display: flex; gap: 4px; }
 
-main { padding: 6px 12px 14px; display: flex; flex-direction: column; gap: 10px; }
+main { padding: 6px 12px 14px; display: flex; flex-direction: column; gap: 8px; }
 
 /* ---------- Chips & Banner ---------- */
 
@@ -141,11 +141,20 @@ main { padding: 6px 12px 14px; display: flex; flex-direction: column; gap: 10px;
   gap: 8px;
 }
 
-/* Kontext-Zeile der Start-Ansicht: „✦ 2 Logins für example.com". */
+/* Kontext-Zeile der Start-Ansicht: „✦ 2 Logins für example.com".
+   Als Pill, damit der Abstand als Struktur und nicht als Loch liest. */
 .list-scope {
+  display: inline-flex;
+  align-self: flex-start;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: -2px;
+  padding: 2px 8px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--card-shade);
   color: var(--fg-dim);
-  font-size: 11.5px;
-  padding: 2px 4px 0;
+  font-size: 11px;
 }
 .empty { text-align: center; padding: 14px 0; }
 
