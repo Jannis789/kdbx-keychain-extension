@@ -575,7 +575,7 @@ async function showDetail(id: string): Promise<void> {
       } catch (e) {
         toast(errorText(e));
       }
-    });
+    }, 'Ausfüllen');
     const hostEl = rowValue(hostOf(f.url));
     hostEl.title = f.url;
     card.append(h('div', { class: 'row' }, h('span', { class: 'row-label' }, 'Website'), hostEl, h('span', { class: 'row-actions' }, open, fill)));
