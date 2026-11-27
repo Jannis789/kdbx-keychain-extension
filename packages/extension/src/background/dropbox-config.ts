@@ -1,66 +1,58 @@
 /**
  * Dropbox-App-Credentials zur Laufzeit (ADR-012): die Options-Seite pflegt
- * App-Key/-Secret in chrome.storage.local; die Build-Injection (ADR-007)
- * bleibt Dev-Prefill/Fallback. Ein sync-Spiegel (Cache) bedient die
- * synchrone CloudFactory — geladen wird er, bevor die Vault-Init läuft
+ * App-Key/-Secret in chrome.storage.local, der Host kann dieselben Werte plus
+ * refreshToken/remotePath per chrome.storage.managed liefern. Ein Cache
+ * bedient die synchrone CloudFactory — geladen, bevor die Vault-Init läuft
  * (VaultDeps.ready).
+ *
+ * Vertrauensgrenze (bewusst schmal): beide Quellen schreiben nur wir selbst —
+ * `chrome.storage.local` über `saveDropboxAppConfig`, `chrome.storage.managed`
+ * über die nix-Activation (`jq --arg` erzeugt immer Strings). Es gibt daher
+ * keine Typ-Wiederherstellung beim Lesen: falscher Inhalt ist ein Bug, der
+ * auffallen soll, kein Zustand, den wir wegdefinieren (kein "defensive
+ * programming" als Fehler-Ersatz).
  */
-
 export interface DropboxAppConfig {
   appKey: string;
   appSecret: string;
 }
 
-const STORAGE_KEY = 'kdbx.dropboxApp';
-
-/** Pure Normalisierung: beliebiges Storage-Fragment → bereinigte Config. */
-export function parseDropboxAppConfig(input: unknown): DropboxAppConfig {
-  const src = (typeof input === 'object' && input !== null ? input : {}) as Record<string, unknown>;
-  const clean = (v: unknown): string => (typeof v === 'string' ? v.trim() : '');
-  return { appKey: clean(src.appKey), appSecret: clean(src.appSecret) };
-}
-
-/** Pure Normalisierung des Host-Deploys (ADR-012): alle vier Defaults. */
-export function parseManagedConfig(input: unknown): ManagedConfig {
-  const src = (typeof input === 'object' && input !== null ? input : {}) as Record<string, unknown>;
-  const clean = (v: unknown): string => (typeof v === 'string' ? v.trim() : '');
-  return {
-    appKey: clean(src.appKey),
-    appSecret: clean(src.appSecret),
-    refreshToken: clean(src.refreshToken),
-    remotePath: clean(src.remotePath),
-  };
-}
-
-/** Pure Merge-Semantik: leere Patch-Felder löschen (→ nächste Stufe greift). */
-export function mergeDropboxAppConfig(
-  current: DropboxAppConfig,
-  patch: Partial<DropboxAppConfig>,
-): DropboxAppConfig {
-  const clean = (v: string | undefined): string => (typeof v === 'string' ? v.trim() : '');
-  return {
-    appKey: clean(patch.appKey ?? current.appKey),
-    appSecret: clean(patch.appSecret ?? current.appSecret),
-  };
-}
-
-let cache: DropboxAppConfig = { appKey: '', appSecret: '' };
-
-/** Für den Lade-Fluss und Tests: Cache direkt setzen (bereinigt). */
-export function setDropboxAppConfigCache(next: DropboxAppConfig): void {
-  cache = parseDropboxAppConfig(next);
-}
-
-/** Host-Deploy (nix/Enterprise-Policy): chrome.storage.managed — unterste Storage-Stufe. */
+/** Host-Deploy (nix/Enterprise-Policy): chrome.storage.managed. */
 export interface ManagedConfig extends DropboxAppConfig {
   refreshToken: string;
   remotePath: string;
 }
 
-let managed: ManagedConfig = { appKey: '', appSecret: '', refreshToken: '', remotePath: '' };
+const STORAGE_KEY = 'kdbx.dropboxApp';
+const MANAGED_KEYS: (keyof ManagedConfig)[] = ['appKey', 'appSecret', 'refreshToken', 'remotePath'];
+
+const EMPTY_APP: DropboxAppConfig = { appKey: '', appSecret: '' };
+const EMPTY_MANAGED: ManagedConfig = { ...EMPTY_APP, refreshToken: '', remotePath: '' };
+
+/**
+ * Nur an der Eingabegrenze: menschlich eingefügte Keys/Secrets tragen oft
+ * Whitespace aus der Zwischenablage — das ist UX, keine Fehlerabwehr.
+ */
+export function mergeDropboxAppConfig(
+  current: DropboxAppConfig,
+  patch: Partial<DropboxAppConfig>,
+): DropboxAppConfig {
+  return {
+    appKey: (patch.appKey ?? current.appKey).trim(),
+    appSecret: (patch.appSecret ?? current.appSecret).trim(),
+  };
+}
+
+let cache: DropboxAppConfig = EMPTY_APP;
+let managed: ManagedConfig = EMPTY_MANAGED;
+
+/** Für den Lade-Fluss und Tests: Cache direkt setzen. */
+export function setDropboxAppConfigCache(next: DropboxAppConfig): void {
+  cache = next;
+}
 
 export function setDropboxManagedConfigCache(next: ManagedConfig): void {
-  managed = parseManagedConfig(next);
+  managed = next;
 }
 
 export function dropboxManagedConfig(): ManagedConfig {
@@ -68,37 +60,41 @@ export function dropboxManagedConfig(): ManagedConfig {
 }
 
 export async function loadDropboxAppConfig(): Promise<void> {
-  // Host-Level zuerst (nix/Enterprise-Policy) — Fehlen ist normal, kein Fehler.
-  await new Promise<void>((resolve) => {
-    chrome.storage.managed.get(['appKey', 'appSecret', 'refreshToken', 'remotePath'], (res) => {
-      void chrome.runtime.lastError; // kein Managed-Deploy → bewusst ignorieren
-      setDropboxManagedConfigCache(parseManagedConfig(res));
-      resolve();
+  // Host-Level zuerst (nix/Enterprise-Policy) — kein Managed-Deploy ist ein
+  // legitimer Zustand (ExtensionError des Browsers), kein Fehler.
+  const hostValues = await new Promise<Partial<ManagedConfig> | undefined>((resolve) => {
+    chrome.storage.managed.get(MANAGED_KEYS, (res) => {
+      void chrome.runtime.lastError;
+      resolve(res as Partial<ManagedConfig> | undefined);
     });
   });
-  const stored = await chrome.storage.local.get(STORAGE_KEY);
-  setDropboxAppConfigCache(parseDropboxAppConfig(stored[STORAGE_KEY]));
+  managed = { ...EMPTY_MANAGED, ...hostValues };
+
+  const stored = (await chrome.storage.local.get(STORAGE_KEY))[STORAGE_KEY] as
+    | DropboxAppConfig
+    | undefined;
+  cache = stored ?? EMPTY_APP;
 }
 
 export async function saveDropboxAppConfig(patch: Partial<DropboxAppConfig>): Promise<DropboxAppConfig> {
   const next = mergeDropboxAppConfig(cache, patch);
-  setDropboxAppConfigCache(next);
+  cache = next;
   await chrome.storage.local.set({ [STORAGE_KEY]: next });
   return next;
 }
 
-/** Gepflegter Stand ohne Build-Fallback — für die Options-Anzeige. */
+/** Gepflegter Stand ohne Host-Deploy — für die Options-Anzeige. */
 export function dropboxAppConfig(): DropboxAppConfig {
   return cache;
 }
 
 /** Gestaffelt (ADR-012): Options-Pflege > Host-Deploy (managed). */
 export function resolvedAppKey(): string {
-  return dropboxAppConfig().appKey || managed.appKey;
+  return cache.appKey || managed.appKey;
 }
 
 export function resolvedAppSecret(): string {
-  return dropboxAppConfig().appSecret || managed.appSecret;
+  return cache.appSecret || managed.appSecret;
 }
 
 export function resolvedRefreshToken(): string {
@@ -110,6 +106,5 @@ export function resolvedRemotePath(): string {
 }
 
 export function hasResolvedAppKey(): boolean {
-  const key = resolvedAppKey();
-  return key !== '' && !key.startsWith('__');
+  return resolvedAppKey() !== '';
 }
