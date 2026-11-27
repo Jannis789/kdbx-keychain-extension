@@ -6,6 +6,7 @@
 import { buildOtpUri, parseOtpUri, type EntryFields, type KeychainEntry, type TotpConfig } from '@kdbx-keychain/core';
 import { encodeBase64 } from '../shared/base64';
 import { callBackground } from '../shared/ipc';
+import { VAULT_SVG, KEY_SVG, USER_SVG, CLOCK_SVG, WAND_SVG, UP_SVG, DOWN_SVG, OPEN_SVG, EYE_SVG } from './icons';
 import type { CopyableField, FillResult, Snapshot, TotpInfo } from '../shared/messages';
 
 type View = 'locked' | 'list' | 'detail' | 'edit';
@@ -73,12 +74,28 @@ function button(text: string, cls: string, onClick: () => void, title?: string):
   return b;
 }
 
+/** Inline-SVG-Icon (Lucide, stroke=currentColor) als span. */
+function icon(svg: string, cls = 'file-ico'): HTMLElement {
+  const span = document.createElement('span');
+  span.className = cls;
+  span.innerHTML = svg;
+  return span;
+}
+
+/** Icon-Only-Button mit Lucide-SVG statt Emoji-Glyph (font-unabhängig). */
+function iconButton(svg: string, onClick: () => void, title: string): HTMLButtonElement {
+  const b = h('button', { class: 'icon-btn', type: 'button', title }) as HTMLButtonElement;
+  b.innerHTML = svg;
+  b.addEventListener('click', onClick);
+  return b;
+}
+
 function flash(btn: HTMLButtonElement, done = '✓'): void {
-  const original = btn.textContent;
-  btn.textContent = done;
+  const original = btn.innerHTML;
+  btn.innerHTML = done;
   btn.classList.add('flash');
   window.setTimeout(() => {
-    btn.textContent = original;
+    btn.innerHTML = original;
     btn.classList.remove('flash');
   }, 900);
 }
@@ -205,8 +222,8 @@ function renderLocked(): void {
   const fileMeta = h(
     'div',
     { class: 'file-meta' },
-    h('div', { class: 'file-row' }, h('span', { class: 'file-ico' }, '🗄'), vaultInfo),
-    h('div', { class: 'file-row' }, h('span', { class: 'file-ico' }, '🔑'), keyName, keyBtn),
+    h('div', { class: 'file-row' }, icon(VAULT_SVG), vaultInfo),
+    h('div', { class: 'file-row' }, icon(KEY_SVG), keyName, keyBtn),
   );
   const errBox = h('div', { class: 'banner danger', hidden: 'true' });
   const unlockBtn = button('Entsperren', 'btn primary wide', doUnlock);
@@ -380,7 +397,7 @@ function syncBar(): HTMLElement {
 
   const actions = h('div', { class: 'sync-actions' });
   actions.append(
-    button('↑', 'icon-btn', async () => {
+    iconButton(UP_SVG, async () => {
       try {
         const res = await callBackground<{ snapshot: Snapshot }>({ type: 'SYNC_PUSH' });
         state.snapshot = res.snapshot;
@@ -390,7 +407,7 @@ function syncBar(): HTMLElement {
         toast(errorText(e));
       }
     }, 'Jetzt hochladen'),
-    button('↓', 'icon-btn', async () => {
+    iconButton(DOWN_SVG, async () => {
       try {
         const res = await callBackground<{ result: string; snapshot: Snapshot }>({
           type: 'SYNC_PULL',
@@ -473,9 +490,9 @@ function entryCard(entry: KeychainEntry): HTMLElement {
   }
 
   const actions = h('div', { class: 'entry-actions' });
-  const userBtn = button('👤', 'icon-btn', () => void copyField(entry.id, 'username', userBtn), 'Benutzername kopieren');
-  const pwBtn = button('🔑', 'icon-btn', () => void copyField(entry.id, 'password', pwBtn), 'Passwort kopieren');
-  const fillBtn = button('⤵', 'icon-btn', async () => {
+  const userBtn = iconButton(USER_SVG, () => void copyField(entry.id, 'username', userBtn), 'Benutzername kopieren');
+  const pwBtn = iconButton(KEY_SVG, () => void copyField(entry.id, 'password', pwBtn), 'Passwort kopieren');
+  const fillBtn = iconButton(WAND_SVG, async () => {
     try {
       const res = await callBackground<{ filled: FillResult }>({ type: 'FILL', entryId: entry.id });
       const { username, password } = res.filled;
@@ -486,11 +503,11 @@ function entryCard(entry: KeychainEntry): HTMLElement {
     }
   }, 'Auf dieser Seite ausfüllen');
   const totpBtn = f.totp
-    ? button('⏱', 'icon-btn', () => void copyField(entry.id, 'totp', totpBtn), 'TOTP kopieren')
+    ? iconButton(CLOCK_SVG, () => void copyField(entry.id, 'totp', totpBtn), 'TOTP kopieren')
     : null;
   actions.append(userBtn, pwBtn, ...(totpBtn ? [totpBtn] : []), fillBtn);
 
-  const openBtn = button('↗', 'icon-btn', () => {
+  const openBtn = iconButton(OPEN_SVG, () => {
     if (f.url) chrome.tabs.create({ url: f.url });
   }, 'Website öffnen');
   actions.append(openBtn);
@@ -528,7 +545,7 @@ async function showDetail(id: string): Promise<void> {
   if (f.password) {
     const codeEl = h('code', { class: 'secret masked' }, '••••••••');
     const btn = button('kopieren', 'btn small', () => void copyField(id, 'password', btn));
-    const toggle = button('👁', 'icon-btn', () => {
+    const toggle = iconButton(EYE_SVG, () => {
       const masked = codeEl.classList.toggle('masked');
       codeEl.textContent = masked ? '••••••••' : f.password!;
     }, 'Anzeigen/Verbergen');

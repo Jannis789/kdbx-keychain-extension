@@ -205,7 +205,11 @@ input[type='file'].file-input { display: none; } /* Picker per Button, Datei-Sta
   border-radius: 10px;
 }
 .file-row { display: flex; align-items: center; gap: 8px; font-size: 12px; min-width: 0; }
-.file-ico { font-size: 13px; flex: none; }
+.file-ico { display: inline-flex; flex: none; color: var(--fg-dim); }
+.file-ico svg { width: 15px; height: 15px; }
+.icon-btn svg { width: 14px; height: 14px; display: block; }
+.logo { display: inline-flex; align-items: center; }
+.logo svg { width: 15px; height: 15px; }
 .file-name { color: var(--fg); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .file-name.dim { color: var(--fg-dim); font-weight: 400; }
 .key-status-err { color: var(--danger); }
