@@ -6,7 +6,7 @@
 import { buildOtpUri, parseOtpUri, type EntryFields, type KeychainEntry, type TotpConfig } from '@kdbx-keychain/core';
 import { encodeBase64 } from '../shared/base64';
 import { callBackground } from '../shared/ipc';
-import { VAULT_SVG, KEY_SVG, USER_SVG, CLOCK_SVG, WAND_SVG, UP_SVG, DOWN_SVG, OPEN_SVG, EYE_SVG } from './icons';
+import { VAULT_SVG, KEY_SVG, USER_SVG, CLOCK_SVG, WAND_SVG, UP_SVG, DOWN_SVG, OPEN_SVG, EYE_SVG, COPY_SVG } from './icons';
 import type { CopyableField, FillResult, Snapshot, TotpInfo } from '../shared/messages';
 
 type View = 'locked' | 'list' | 'detail' | 'edit';
@@ -539,17 +539,18 @@ async function showDetail(id: string): Promise<void> {
   );
 
   if (f.username) {
-    const btn = button('kopieren', 'btn small', () => void copyField(id, 'username', btn));
-    card.append(row('Benutzername', f.username, btn));
+    const btn = iconButton(COPY_SVG, () => void copyField(id, 'username', btn), 'Kopieren');
+    card.append(row('Benutzername', rowValue(f.username, btn), btn));
   }
   if (f.password) {
-    const codeEl = h('code', { class: 'secret masked' }, '••••••••');
-    const btn = button('kopieren', 'btn small', () => void copyField(id, 'password', btn));
+    const codeEl = h('code', { class: 'secret masked row-value copyable' }, '••••••••') as HTMLElement;
+    const btn = iconButton(COPY_SVG, () => void copyField(id, 'password', btn), 'Kopieren');
     const toggle = iconButton(EYE_SVG, () => {
       const masked = codeEl.classList.toggle('masked');
       codeEl.textContent = masked ? '••••••••' : f.password!;
     }, 'Anzeigen/Verbergen');
-    card.append(h('div', { class: 'row' }, h('span', { class: 'row-label' }, 'Passwort'), codeEl, toggle, btn));
+    codeEl.addEventListener('click', () => btn.click());
+    card.append(h('div', { class: 'row' }, h('span', { class: 'row-label' }, 'Passwort'), codeEl, h('span', { class: 'row-actions' }, toggle, btn)));
   }
   if (f.totp) {
     const info = state.totp.get(id) ?? (await callBackground<TotpInfo | null>({ type: 'TOTP_NOW', entryId: id })) ?? undefined;
@@ -557,14 +558,16 @@ async function showDetail(id: string): Promise<void> {
       state.totp.set(id, info);
       const codeEl = h('code', { class: 'totp-big', 'data-totp-code': id }, info.code) as HTMLElement;
       const remaining = h('span', { class: 'totp-remaining', 'data-totp-remaining': id }, `${info.remainingSeconds}s`);
-      const btn = button('kopieren', 'btn small', () => void copyField(id, 'totp', btn));
-      card.append(h('div', { class: 'row' }, h('span', { class: 'row-label' }, 'TOTP'), codeEl, remaining, btn));
+      const btn = iconButton(COPY_SVG, () => void copyField(id, 'totp', btn), 'Kopieren');
+      codeEl.classList.add('row-value', 'copyable');
+      codeEl.addEventListener('click', () => btn.click());
+      card.append(h('div', { class: 'row' }, h('span', { class: 'row-label' }, 'TOTP'), codeEl, remaining, h('span', { class: 'row-actions' }, btn)));
       startTicker(() => void refreshTotp([entry]));
     }
   }
   if (f.url) {
-    const open = button('öffnen', 'btn small', () => chrome.tabs.create({ url: f.url }));
-    const fill = button('ausfüllen', 'btn small primary', async () => {
+    const open = iconButton(OPEN_SVG, () => chrome.tabs.create({ url: f.url }), 'Website öffnen');
+    const fill = iconButton(WAND_SVG, async () => {
       try {
         const r = await callBackground<{ filled: FillResult }>({ type: 'FILL', entryId: id });
         toast(r.filled.username || r.filled.password ? 'Ausgefüllt' : 'Keine Login-Felder gefunden');
@@ -573,12 +576,14 @@ async function showDetail(id: string): Promise<void> {
         toast(errorText(e));
       }
     });
-    card.append(h('div', { class: 'row' }, h('span', { class: 'row-label' }, 'Website'), h('span', { class: 'mono' }, hostOf(f.url)), open, fill));
+    const hostEl = rowValue(hostOf(f.url));
+    hostEl.title = f.url;
+    card.append(h('div', { class: 'row' }, h('span', { class: 'row-label' }, 'Website'), hostEl, h('span', { class: 'row-actions' }, open, fill)));
   }
   for (const [key, cf] of Object.entries(f.customFields ?? {})) {
     const shown = cf.secret ? `${cf.value.slice(0, 2)}••••` : cf.value;
-    const btn = button('kopieren', 'btn small', () => void copyField(id, `custom:${key}`, btn));
-    card.append(h('div', { class: 'row' }, h('span', { class: 'row-label' }, key), h('span', { class: 'mono' }, shown), btn));
+    const btn = iconButton(COPY_SVG, () => void copyField(id, `custom:${key}`, btn), 'Kopieren');
+    card.append(h('div', { class: 'row' }, h('span', { class: 'row-label' }, key), rowValue(shown, btn), h('span', { class: 'row-actions' }, btn)));
   }
   if (f.notes) card.append(h('div', { class: 'notes' }, f.notes));
 
@@ -609,14 +614,20 @@ async function showDetail(id: string): Promise<void> {
   viewEl.append(card);
 }
 
-function row(label: string, value: string, ...actions: HTMLElement[]): HTMLElement {
-  return h(
-    'div',
-    { class: 'row' },
-    h('span', { class: 'row-label' }, label),
-    h('span', { class: 'mono' }, value),
-    ...actions,
-  );
+function row(label: string, value: string | HTMLElement, ...actions: HTMLElement[]): HTMLElement {
+  const valueEl = typeof value === 'string' ? h('span', { class: 'row-value' }, value) : value;
+  const actionsEl = h('span', { class: 'row-actions' }, ...actions);
+  return h('div', { class: 'row' }, h('span', { class: 'row-label' }, label), valueEl, actionsEl);
+}
+
+/** Wert mit Ellipsis; Klick löst den Copy-Button der Zeile aus (auch bei Abschnitt). */
+function rowValue(text: string, copyBtn?: HTMLButtonElement): HTMLElement {
+  const el = h('span', { class: 'row-value', title: text }, text) as HTMLElement;
+  if (copyBtn) {
+    el.classList.add('copyable');
+    el.addEventListener('click', () => copyBtn.click());
+  }
+  return el;
 }
 
 // ---------- View: Edit / Create ----------
