@@ -51,7 +51,7 @@ export function fetchKeyfileViaNative(timeoutMs = 3000): Promise<NativeKeyfile> 
     }
     port.onMessage.addListener((msg: { ok?: boolean; b64?: string; path?: string }) => {
       if (msg?.ok && typeof msg.b64 === 'string' && msg.b64 !== '') {
-        done({ b64: msg.b64, path: typeof msg.path === 'string' ? msg.path : undefined });
+        done({ b64: msg.b64, ...(typeof msg.path === 'string' ? { path: msg.path } : {}) });
       } else {
         done({ b64: null, error: 'host antwortete ohne Keyfile' });
       }
