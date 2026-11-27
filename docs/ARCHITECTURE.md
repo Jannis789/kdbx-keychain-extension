@@ -122,6 +122,26 @@ Tokens statt Pixelkopie: Akzent `#3584e4`, Cards mit 12 px Radius, dunkles Schem
 via `prefers-color-scheme`, Font-Pfad „Adwaita Sans → Inter → Cantarell“.
 Freiheiten ausdrücklich erlaubt (Wunsch), die GNOME-Haptik bleibt erhalten.
 
+### ADR-011 — Popup-UI: Preact, Deklarativität zuerst
+Das Popup wird vollständig als Preact-Komponentenbaum (TSX) gerendert — kein
+imperativer DOM-Code mehr. Ziel ist „mehr HTML als JS-Ausdrücke“:
+- **State lebt im Background** (Snapshot = Quelle der Wahrheit, ADR-004). Das
+  Popup ist eine Projektion: Views bekommen Daten als Props, nie via
+  DOM-Lesezugriff. Ein gesperrter Tresor überschreibt jede Navigation.
+- **Interaktion = Message.** Jede Nutzeraktion schickt eine RuntimeMessage an
+  den Router (COPY, SYNC_PUSH, UNLOCK, …) und übernimmt den neuen Snapshot —
+  nie einen direkten DOM-Zweig.
+- **JSX schlägt Helfer.** Bedingte Abschnitte stehen als JSX-Blöcke
+  (`{f.url && <Row … />}`), nicht in h()-Ketten; nur wirklich
+  wiederverwendbare Bausteine bleiben Komponenten (Row, IconButton, Banner,
+  CopyButton).
+- **Icons bleiben inline-SVG** (Lucide, ISC) und werden per
+  `dangerouslySetInnerHTML` eingesetzt — kein Font, kein Netz.
+- Verworfen: Alpine.js/alpine-ajax (Client-State-Duplikat, `new Function`-Eval
+  gegen MV3-CSP, und ohne Server gibt es kein „html over the wire“) sowie
+  htmx-Stil (setzt Server voraus, den eine Extension nicht hat). Preact ist
+  hier reines Komponenten-Modell (~4 KB), kein Statement über htmx.
+
 ## Sicherheitsmodell (Kurz-Threat-Modell)
 
 - At rest ist die KDBX immer verschlüsselt (KDBX4: AES-256 + Argon2id).

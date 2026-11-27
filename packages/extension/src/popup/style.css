@@ -236,6 +236,10 @@ input[type='file'].file-input { display: none; } /* Picker per Button, Datei-Sta
   border-bottom: 1px solid var(--card-shade);
 }
 .row-label { color: var(--fg-dim); font-size: 11.5px; min-width: 84px; }
+/* Wert kollabiert auf verfügbaren Platz (Ellipsis), Aktionen rechts raus. */
+.row-value { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.row-value.copyable { cursor: pointer; }
+.row-actions { display: inline-flex; align-items: center; gap: 2px; flex: none; }
 .mono, code { font-family: ui-monospace, 'Cantarell Mono', monospace; font-size: 12.5px; }
 
 .secret.masked { letter-spacing: 2px; user-select: none; }

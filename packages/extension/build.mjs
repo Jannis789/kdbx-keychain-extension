@@ -31,7 +31,7 @@ const targets = target === 'all' ? ['chrome', 'firefox'] : [target];
 const entryPoints = {
   background: join(src, 'background/main.ts'),
   content: join(src, 'content/content.ts'),
-  'popup/popup': join(src, 'popup/popup.ts'),
+  'popup/popup': join(src, 'popup/popup.tsx'),
   'options/options': join(src, 'options/options.ts'),
   'offscreen/clipboard': join(src, 'offscreen/clipboard.ts'),
 };
