@@ -9,6 +9,13 @@ cd "$(dirname "$0")/.."
 
 BUILD_TARGET=firefox scripts/build-extension.sh
 
+if pgrep -f "firefox-devedition" > /dev/null; then
+  echo ""
+  echo "⚠️  firefox-devedition LÄUFT NOCH — XPI wurde ersetzt, aber der Browser"
+  echo "    lädt sie erst nach einem VOLLSTÄNDIGEN Neustart (alle Fenster zu)."
+  echo "    Sonst: vermischtener Zustand / leeres Popup ('Extension context invalidated')."
+  echo ""
+fi
 OUT=packages/extension/dist/firefox/kdbx-keychain-dev.xpi
 rm -f "$OUT"
 (cd packages/extension/dist/firefox && zip -q -r -X "$(basename "$OUT")" manifest.json background.js content.js popup options)
