@@ -10,7 +10,7 @@ import type {
   Snapshot,
   TotpInfo,
 } from '../shared/messages';
-import { armClipboardClear, copyToClipboard, setClipboardExpected } from './clipboard';
+import { copyToClipboard } from './clipboard';
 import { connectDropboxPkce, dropboxRedirectUri } from './oauth';
 import { dropboxAppConfig, saveDropboxAppConfig } from './dropbox-config';
 import { fetchKeyfileViaNative } from './native';
@@ -91,14 +91,7 @@ export function createRouter(vault: Vault): Route {
           const value = await vault.readField(message.entryId, message.field);
           if (!value) throw new Error('Feld ist leer');
           await copyToClipboard(value);
-          const { settings } = await vault.snapshot();
-          let clearsAt: number | null = null;
-          if (settings.clipboardClearSeconds > 0) {
-            setClipboardExpected(value);
-            await armClipboardClear(settings.clipboardClearSeconds);
-            clearsAt = Date.now() + settings.clipboardClearSeconds * 1000;
-          }
-          return ok({ clearsAt });
+          return ok({ copied: true });
         }
         case 'FILL':
           await vault.touch();

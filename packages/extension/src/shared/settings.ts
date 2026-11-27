@@ -1,20 +1,17 @@
 /**
- * Nutzereinstellungen (Phase 3): Auto-Lock, Clipboard-Auto-Clear,
+ * Nutzereinstellungen (Phase 3): Auto-Lock, Dropbox-Pfad. Bewusst pure —
  * Dropbox-Pfad. Bewusst pure — Normalisierung testbar ohne Browser.
  */
 
 export interface Settings {
   /** Minuten Inaktivität bis Auto-Lock; 0 = nie (ADR-004: Default 15). */
   autoLockMinutes: number;
-  /** Sekunden bis Clipboard-Auto-Clear; 0 = nie (ADR-009: Default 20). */
-  clipboardClearSeconds: number;
   /** KDBX-Pfad im Cloud-Speicher (Dropbox-Root relativ). */
   remotePath: string;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
   autoLockMinutes: 15,
-  clipboardClearSeconds: 20,
   // Repo-Fallback; Host-Deploy (ADR-012, managed.remotePath) übersteuert via
   // Seed vor mergeSettings — siehe vault.doInit.
   remotePath: '/kdbx-keychain/test.kdbx',
@@ -36,12 +33,6 @@ export function normalizeSettings(input: Partial<Settings> | null | undefined): 
   if (!remotePath.startsWith('/')) remotePath = '/' + remotePath;
   return {
     autoLockMinutes: clampInt(src.autoLockMinutes, 0, 1440, DEFAULT_SETTINGS.autoLockMinutes),
-    clipboardClearSeconds: clampInt(
-      src.clipboardClearSeconds,
-      0,
-      600,
-      DEFAULT_SETTINGS.clipboardClearSeconds,
-    ),
     remotePath,
   };
 }

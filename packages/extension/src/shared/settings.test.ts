@@ -11,8 +11,6 @@ describe('normalizeSettings', () => {
   it('klammert Extremwerte (Minutes 0–1440, Sekunden 0–600)', () => {
     expect(normalizeSettings({ autoLockMinutes: 99_999 }).autoLockMinutes).toBe(1440);
     expect(normalizeSettings({ autoLockMinutes: -5 }).autoLockMinutes).toBe(0);
-    expect(normalizeSettings({ clipboardClearSeconds: 5000 }).clipboardClearSeconds).toBe(600);
-    expect(normalizeSettings({ clipboardClearSeconds: -1 }).clipboardClearSeconds).toBe(0);
   });
 
   it('rundet Bruchteile und erzwingt führenden Slash im Pfad', () => {
@@ -26,7 +24,6 @@ describe('mergeSettings', () => {
   it('patched nur übergebene Felder', () => {
     const merged = mergeSettings(DEFAULT_SETTINGS, { autoLockMinutes: 5 });
     expect(merged.autoLockMinutes).toBe(5);
-    expect(merged.clipboardClearSeconds).toBe(DEFAULT_SETTINGS.clipboardClearSeconds);
     expect(merged.remotePath).toBe(DEFAULT_SETTINGS.remotePath);
   });
 });

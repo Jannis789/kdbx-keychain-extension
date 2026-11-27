@@ -105,14 +105,10 @@ Gelesen werden KeePassXC-Konventionen: `otp`-Feld (`otpauth://…`) sowie Legacy
 RFC 6238 lokal. Steam-TOTP optional später.
 
 ### ADR-009 — Copy-Funktion & Clipboard
-Kopieren von Passwort/Username/TOTP/Custom-Fields. Hintergrund-Alarm löscht die
-Zwischenablage nach N Sekunden (Default 20, konfigurierbar) — und nur, wenn sie
-noch unseren Wert enthält ( überschreibt keine fremden Inhalte).
-*Implementierung (Phase 3):* Offscreen-Dokument (`chrome.offscreen`,
-Reason CLIPBOARD) schreibt/liest die Zwischenablage; der Alarm vergleicht den
-Inhalt mit dem erwarteten Wert (RAM-only im SW) und löscht nur bei Identität.
-`chrome.alarms` unterhalb 1 Minute nur in Entpackten Extensions — im Release
-ist die effektive Mindestgranularität 60 s (dokumentierte Grenze).
+Kopieren von Passwort/Username/TOTP/Custom-Fields — **nur Schreiben**. Ein
+Clipboard-Auto-Clear war nie gefordert und wurde 2026-11-27 auf Produkt-
+entscheidung entfernt (YAGNI). Restmechanik: Chrome-MV3-SW ohne DOM →
+Offscreen-Dokument (Reason CLIPBOARD) schreibt; Firefox-Event-Page direkt.
 
 ### ADR-010 — Design: libadwaita-inspiriert
 Tokens statt Pixelkopie: Akzent `#3584e4`, Cards mit 12 px Radius, dunkles Scheme

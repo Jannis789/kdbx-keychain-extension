@@ -1,10 +1,9 @@
 /**
  * MV3-Service-Worker-Einstiegspunkt: Chrome-Wiring für
- * Vault + Router + Clipboard-Alarm + Kontextmenü + Shortcut.
+ * Vault + Router + Kontextmenü + Shortcut.
  */
 import { createKdbxDatabasePort, DropboxCloud } from '@kdbx-keychain/core';
 import { AUTO_LOCK_ALARM, Vault, type CloudFactory } from './vault';
-import { CLIPBOARD_CLEAR_ALARM, clearClipboardIfExpected } from './clipboard';
 import { chromeAlarms, chromeKV } from './ports';
 import { createRouter, matchAndFillActiveTab } from './router';
 import {
@@ -60,7 +59,7 @@ chrome.runtime.onInstalled.addListener(() => {
 chrome.runtime.onMessage.addListener(
   (message: { type?: string } | undefined, sender, sendResponse): boolean => {
     const type = message?.type;
-    if (type === 'CLIPBOARD_WRITE' || type === 'CLIPBOARD_CLEAR_IF_SAME') {
+    if (type === 'CLIPBOARD_WRITE') {
       return false; // intern: nur fürs Offscreen-Dokument (ADR-009)
     }
     route(message as RuntimeMessage, sender).then(sendResponse);
@@ -72,7 +71,6 @@ chrome.runtime.onMessage.addListener(
 
 chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === AUTO_LOCK_ALARM) void vault.checkAutoLock();
-  else if (alarm.name === CLIPBOARD_CLEAR_ALARM) void clearClipboardIfExpected();
 });
 
 // ---------- Badge-Feedback ----------

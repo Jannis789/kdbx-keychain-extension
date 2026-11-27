@@ -1,4 +1,4 @@
-/** Options-Seite (Phase 3): Dropbox-Verbindung + Auto-Lock/Clipboard/Pfad. */
+/** Options-Seite (Phase 3): Dropbox-Verbindung + Auto-Lock/Pfad. */
 import { callBackground } from '../shared/ipc';
 import type { Snapshot } from '../shared/messages';
 
@@ -6,7 +6,6 @@ const $ = <T extends HTMLElement>(id: string): T => document.getElementById(id) 
 
 const statusEl = $('dropbox-status');
 const autolockIn = $<HTMLInputElement>('set-autolock');
-const clipboardIn = $<HTMLInputElement>('set-clipboard');
 const remotePathIn = $<HTMLInputElement>('set-remotepath');
 const tokenIn = $<HTMLTextAreaElement>('refresh-token');
 const toastEl = $('toast');
@@ -25,7 +24,6 @@ function applySnapshot(snap: Snapshot): void {
   statusEl.textContent = snap.sync.connected ? 'verbunden' : 'nicht verbunden';
   statusEl.className = `chip ${snap.sync.connected ? 'unlocked' : 'dim-chip'}`;
   autolockIn.value = String(snap.settings.autoLockMinutes);
-  clipboardIn.value = String(snap.settings.clipboardClearSeconds);
   remotePathIn.value = snap.settings.remotePath;
 }
 
@@ -98,7 +96,6 @@ $('btn-save').addEventListener('click', async () => {
       type: 'SET_SETTINGS',
       patch: {
         autoLockMinutes: Number(autolockIn.value),
-        clipboardClearSeconds: Number(clipboardIn.value),
         remotePath: remotePathIn.value,
       },
     });

@@ -58,8 +58,8 @@ const NotifyCtx = createContext<(message: string) => void>(() => {});
 function useCopy(): (entryId: string, field: CopyableField) => Promise<void> {
   const notify = useContext(NotifyCtx);
   return async (entryId, field) => {
-    const res = await callBackground<{ clearsAt: number | null }>({ type: 'COPY', entryId, field });
-    notify(res.clearsAt ? 'Kopiert — wird automatisch gelöscht' : 'Kopiert');
+    await callBackground({ type: 'COPY', entryId, field });
+    notify('Kopiert');
   };
 }
 

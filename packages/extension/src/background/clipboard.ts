@@ -1,20 +1,13 @@
 /**
- * Clipboard (ADR-009) — browsergetrennt:
+ * Clipboard (ADR-009, eingedampft): nur schreiben — kein Auto-Clear
+ * (Produktentscheidung 2026-11-27: nie gefordertes Feature).
  *
- *  Chrome (MV3 Service-Worker): kein DOM → Offscreen-Dokument (Reason: CLIPBOARD).
- *  Firefox (MV3 Event-Page):    hat ein DOM → navigator.clipboard direkt.
- *
- * Auto-Clear ist zweifach abgesichert: der Background hält den erwarteten
- * Wert nur im RAM und der jeweilige Clipboard-Pfad vergleicht vor dem
- * Löschen den tatsächlichen Inhalt — fremde Inhalte werden nie überschrieben.
+ * Browsergetrennt: Chrome-MV3-SW hat kein DOM → Offscreen-Dokument
+ * (Reason: CLIPBOARD); Firefox-Event-Page schreibt direkt per
+ * navigator.clipboard.
  */
-import type { OffscreenMessage } from '../shared/messages';
-import { chromeAlarms } from './ports';
-
-export const CLIPBOARD_CLEAR_ALARM = 'kdbx-clipboard-clear';
 
 const OFFSCREEN_URL = 'offscreen/clipboard.html';
-
 let creating: Promise<void> | null = null;
 
 function wrap<T>(fn: (cb: (result: T) => void) => void): Promise<T> {
@@ -48,7 +41,7 @@ async function ensureOffscreen(): Promise<void> {
           {
             url: OFFSCREEN_URL,
             reasons: [chrome.offscreen.Reason.CLIPBOARD],
-            justification: 'Zwischenablage schreiben und Auto-Clear (ADR-009)',
+            justification: 'Zwischenablage schreiben (Kopieren)',
           },
           cb,
         ),
@@ -62,80 +55,19 @@ async function ensureOffscreen(): Promise<void> {
   return creating;
 }
 
-async function sendToOffscreen<T>(message: OffscreenMessage): Promise<T | undefined> {
-  await ensureOffscreen();
-  return wrap<T | undefined>((cb) =>
-    chrome.runtime.sendMessage(message as unknown as Record<string, unknown>, (r) => {
-      void chrome.runtime.lastError; // bewusst ignorieren: Offscreen antwortet
-      cb(r);
-    }),
-  );
-}
-
-// ---------- Firefox: direkter Clipboard-Zugriff aus der Event-Page ----------
-
-async function writeDirect(text: string): Promise<void> {
-  await navigator.clipboard.writeText(text);
-}
-
-async function readDirect(): Promise<string> {
-  try {
-    return await navigator.clipboard.readText();
-  } catch {
-    // execCommand-Paste-Fallback (Extension-Page + clipboardRead-Permission)
-    const ta = document.createElement('textarea');
-    ta.setAttribute('aria-hidden', 'true');
-    ta.style.position = 'fixed';
-    ta.style.opacity = '0';
-    document.body.appendChild(ta);
-    ta.focus();
-    try {
-      document.execCommand('paste');
-      return ta.value;
-    } finally {
-      ta.remove();
-    }
-  }
-}
-
-// ---------- Öffentliche API ----------
-
-/** Erwarteten Clipboard-Inhalt merken (nur RAM — stirbt mit dem SW). */
-let clipboardExpected: string | null = null;
-
-export function setClipboardExpected(value: string): void {
-  clipboardExpected = value;
-}
-
 export async function copyToClipboard(text: string): Promise<void> {
   if (hasOffscreen()) {
-    await sendToOffscreen<{ done: boolean }>({ type: 'CLIPBOARD_WRITE', text });
+    await ensureOffscreen();
+    await wrap<unknown>((cb) =>
+      chrome.runtime.sendMessage(
+        { type: 'CLIPBOARD_WRITE', text } as unknown as Record<string, unknown>,
+        (r) => {
+          void chrome.runtime.lastError; // bewusst ignorieren: Offscreen antwortet
+          cb(r);
+        },
+      ),
+    );
   } else {
-    await writeDirect(text);
+    await navigator.clipboard.writeText(text);
   }
-}
-
-export async function clearClipboardIfExpected(): Promise<boolean> {
-  const expected = clipboardExpected;
-  clipboardExpected = null;
-  if (!expected) return false;
-  if (hasOffscreen()) {
-    const res = await sendToOffscreen<{ cleared: boolean }>({
-      type: 'CLIPBOARD_CLEAR_IF_SAME',
-      expected,
-    });
-    return res?.cleared === true;
-  }
-  try {
-    const current = await readDirect();
-    if (current !== expected) return false;
-    await writeDirect('');
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-export async function armClipboardClear(seconds: number): Promise<void> {
-  await chromeAlarms().create(CLIPBOARD_CLEAR_ALARM, seconds);
 }
