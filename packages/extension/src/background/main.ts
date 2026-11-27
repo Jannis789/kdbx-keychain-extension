@@ -7,11 +7,12 @@ import { AUTO_LOCK_ALARM, Vault, type CloudFactory } from './vault';
 import { chromeAlarms, chromeKV } from './ports';
 import { createRouter, matchAndFillActiveTab } from './router';
 import {
-  dropboxManagedConfig,
   hasResolvedAppKey,
   loadDropboxAppConfig,
   resolvedAppKey,
   resolvedAppSecret,
+  resolvedRefreshToken,
+  resolvedRemotePath,
 } from './dropbox-config';
 import type { RuntimeMessage } from '../shared/messages';
 
@@ -36,10 +37,7 @@ const vault = new Vault({
   // Credentials laden, BEVOR init()/cloudFactory greift (Reihenfolge-Garantie).
   ready: loadDropboxAppConfig(),
   // Host-Seed (ADR-012): erst NACH `ready` auslesen — der Cache ist dann voll.
-  seed: () => {
-    const managed = dropboxManagedConfig();
-    return { refreshToken: managed.refreshToken, remotePath: managed.remotePath };
-  },
+  seed: () => ({ refreshToken: resolvedRefreshToken(), remotePath: resolvedRemotePath() }),
 });
 
 const route = createRouter(vault);
@@ -57,12 +55,8 @@ chrome.runtime.onInstalled.addListener(() => {
 // ---------- Messages ----------
 
 chrome.runtime.onMessage.addListener(
-  (message: { type?: string } | undefined, sender, sendResponse): boolean => {
-    const type = message?.type;
-    if (type === 'CLIPBOARD_WRITE') {
-      return false; // intern: nur fürs Offscreen-Dokument (ADR-009)
-    }
-    route(message as RuntimeMessage, sender).then(sendResponse);
+  (message: RuntimeMessage, sender, sendResponse): boolean => {
+    route(message, sender).then(sendResponse);
     return true; // async
   },
 );
@@ -76,13 +70,9 @@ chrome.alarms.onAlarm.addListener((alarm) => {
 // ---------- Badge-Feedback ----------
 
 function badge(text: string, color = '#26a269'): void {
-  try {
-    void chrome.action.setBadgeBackgroundColor({ color });
-    void chrome.action.setBadgeText({ text });
-    setTimeout(() => void chrome.action.setBadgeText({ text: '' }), 2000);
-  } catch {
-    // kosmetisch — ignorieren
-  }
+  void chrome.action.setBadgeBackgroundColor({ color });
+  void chrome.action.setBadgeText({ text });
+  setTimeout(() => void chrome.action.setBadgeText({ text: '' }), 2000);
 }
 
 async function quickFill(): Promise<void> {

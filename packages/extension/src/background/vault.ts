@@ -19,6 +19,7 @@ import type {
   CloudPort,
   DatabasePort,
   EntryFields,
+  EntryPatch,
   KeychainEntry,
   UnlockOptions,
   UnlockedDatabase,
@@ -91,13 +92,12 @@ function bytesEqual(a: Uint8Array, b: Uint8Array): boolean {
   return true;
 }
 
+/** Nur gesetzte Felder weitergeben (exactOptionalPropertyTypes): Passwort, Keyfile oder beides. */
 function toUnlockOptions(stored: StoredCreds): UnlockOptions {
-  const options: UnlockOptions = {};
-  if (typeof stored.password === 'string') options.password = stored.password;
-  if (typeof stored.keyFileBase64 === 'string') {
-    options.keyFileBytes = decodeBase64(stored.keyFileBase64);
-  }
-  return options;
+  return {
+    ...(stored.password ? { password: stored.password } : {}),
+    ...(stored.keyFileBase64 ? { keyFileBytes: decodeBase64(stored.keyFileBase64) } : {}),
+  };
 }
 
 export class Vault {
@@ -138,22 +138,20 @@ export class Vault {
       defaults,
       (await this.deps.local.get(KEY.settings)) as Partial<Settings> | undefined ?? {},
     );
-    const rev = await this.deps.local.get(KEY.rev);
-    this.rev = typeof rev === 'string' ? rev : '';
-    const token = await this.deps.local.get(KEY.token);
-    this.refreshToken = typeof token === 'string' ? token : '';
+    this.rev = ((await this.deps.local.get(KEY.rev)) as string | undefined) ?? '';
+    this.refreshToken = ((await this.deps.local.get(KEY.token)) as string | undefined) ?? '';
     // Host-Seed (ADR-012): Refresh-Token aus Managed — nur Erst-Import.
     if (!this.refreshToken && seed.refreshToken) {
       this.refreshToken = seed.refreshToken;
       await this.deps.local.set(KEY.token, this.refreshToken);
     }
-    const lastSync = await this.deps.local.get(KEY.lastSync);
-    this.lastSyncAt = typeof lastSync === 'number' ? lastSync : null;
+    this.lastSyncAt =
+      ((await this.deps.local.get(KEY.lastSync)) as number | null | undefined) ?? null;
     this.dirty = (await this.deps.local.get(KEY.dirty)) === true;
     // Stay-open (ADR-004): SW-Neustart → aus storage.session rekonstruieren.
     const creds = (await this.deps.session.get(KEY.creds)) as StoredCreds | undefined;
     const bytes = (await this.deps.session.get(KEY.bytes)) as string | undefined;
-    if (creds && typeof bytes === 'string') {
+    if (creds && bytes) {
       try {
         this.db = await this.deps.port.open(decodeBase64(bytes), toUnlockOptions(creds));
       } catch {
@@ -328,10 +326,8 @@ export class Vault {
     clearTotp = false,
   ): Promise<KeychainEntry> {
     const db = await this.ensure();
-    // `totp: undefined` im Objekt ist das Kern-Signal fürs Löschen (s. core update);
-    // der doppelte Cast umgeht nur exactOptionalPropertyTypes, kein Verhaltens-Trick.
-    const effective: Partial<EntryFields> =
-      clearTotp ? ({ ...patch, totp: undefined } as unknown as Partial<EntryFields>) : patch;
+    // `totp: undefined` ist das Kern-Signal fürs Löschen (EntryPatch, s. core).
+    const effective: EntryPatch = clearTotp ? { ...patch, totp: undefined } : patch;
     const entry = db.update(id, effective);
     await this.afterMutation();
     return entry;
@@ -375,6 +371,20 @@ export class Vault {
     this.conflict = { localBytes, remoteBytes, remoteRev };
   }
 
+  /**
+   * Remote-Stand übernehmen: Cache + offene Session. Ohne Session-Creds bleibt
+   * der Tresor gesperrt — dann wird nur der Ciphertext aktualisiert.
+   */
+  private async adoptRemote(bytes: Uint8Array): Promise<void> {
+    const b64 = encodeBase64(bytes);
+    await this.deps.local.set(KEY.cache, b64);
+    const stored = (await this.deps.session.get(KEY.creds)) as StoredCreds | undefined;
+    if (!stored) return;
+    this.db = await this.deps.port.open(bytes, toUnlockOptions(stored));
+    await this.deps.session.set(KEY.bytes, b64);
+    await this.deps.session.set(KEY.activity, this.now());
+  }
+
   private cloud(): CloudPort | null {
     if (!this.refreshToken) return null;
     if (!this.cloudInstance) {
@@ -395,9 +405,9 @@ export class Vault {
     this.lastError = null;
   }
 
-  async pushBestEffort(bytes?: Uint8Array): Promise<void> {
+  async pushBestEffort(): Promise<void> {
     try {
-      await this.push(bytes);
+      await this.push();
     } catch (e) {
       this.lastError = errText(e);
     }
@@ -455,20 +465,13 @@ export class Vault {
       await this.noteSync();
       return 'synced'; // inhaltlich identisch, nur rev aktualisiert
     }
-    const b64 = encodeBase64(latest.bytes);
-    await this.deps.local.set(KEY.cache, b64);
-    const stored = (await this.deps.session.get(KEY.creds)) as StoredCreds | undefined;
-    if (stored) {
-      try {
-        this.db = await this.deps.port.open(latest.bytes, toUnlockOptions(stored));
-        await this.deps.session.set(KEY.bytes, b64);
-        await this.deps.session.set(KEY.activity, this.now());
-      } catch (e) {
-        // Remote hat anderes Master-Passwort → hart sperren, Klartext-Raten nie.
-        await this.lock();
-        this.lastError = `Remote-Datenbank passt nicht zu den gespeicherten Zugangsdaten (${errText(e)})`;
-        return 'cached';
-      }
+    try {
+      await this.adoptRemote(latest.bytes);
+    } catch (e) {
+      // Remote hat anderes Master-Passwort → hart sperren, Klartext-Raten nie.
+      await this.lock();
+      this.lastError = `Remote-Datenbank passt nicht zu den gespeicherten Zugangsdaten (${errText(e)})`;
+      return 'cached';
     }
     await this.noteSync();
     return this.db ? 'synced' : 'cached';
@@ -498,14 +501,7 @@ export class Vault {
       await this.deps.local.set(KEY.rev, result.newRev);
       await this.deps.local.set(KEY.cache, encodeBase64(conflict.localBytes));
     } else {
-      const b64 = encodeBase64(conflict.remoteBytes);
-      await this.deps.local.set(KEY.cache, b64);
-      const stored = (await this.deps.session.get(KEY.creds)) as StoredCreds | undefined;
-      if (stored) {
-        this.db = await this.deps.port.open(conflict.remoteBytes, toUnlockOptions(stored));
-        await this.deps.session.set(KEY.bytes, b64);
-        await this.deps.session.set(KEY.activity, this.now());
-      }
+      await this.adoptRemote(conflict.remoteBytes);
       this.rev = conflict.remoteRev;
       await this.deps.local.set(KEY.rev, conflict.remoteRev);
     }
@@ -536,17 +532,5 @@ export class Vault {
     this.refreshToken = '';
     this.cloudInstance = null;
     await this.deps.local.set(KEY.token, '');
-  }
-
-  getRefreshToken(): string {
-    return this.refreshToken;
-  }
-
-  /** Gibt es überhaupt eine DB (Session, Cache oder Cloud)? Fürs Unlock-UI. */
-  async hasDatabase(): Promise<boolean> {
-    await this.init();
-    if (await this.deps.session.get(KEY.bytes)) return true;
-    if (await this.deps.local.get(KEY.cache)) return true;
-    return this.cloud() !== null;
   }
 }

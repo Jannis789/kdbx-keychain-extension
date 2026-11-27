@@ -40,6 +40,13 @@ export interface EntryFields {
   tags?: string[];
 }
 
+/**
+ * Teil-Update: ein explizit gesetztes `undefined` löscht das Feld. Nötig, weil
+ * die IPC-Schicht (`chrome.runtime`) undefined-Keys verwirft — der Aufrufer
+ * muss „löschen" also in-process ausdrücken können (nur `'totp' in patch`).
+ */
+export type EntryPatch = { [K in keyof EntryFields]?: EntryFields[K] | undefined };
+
 export interface KeychainEntry {
   /** KDBX-UUID als Hex-String (stabil, auch nach Sync). */
   id: string;
@@ -72,7 +79,7 @@ export interface UnlockedDatabase {
   /** RFC 6238: aktueller Code + Restlaufzeit fürs UI (WebCrypto → async). */
   totpNow(id: string): Promise<{ code: string; remainingSeconds: number } | null>;
   create(fields: EntryFields, groupId?: string): KeychainEntry;
-  update(id: string, patch: Partial<EntryFields>): KeychainEntry;
+  update(id: string, patch: EntryPatch): KeychainEntry;
   remove(id: string): void;
   /** Neu verschlüsseln und als KDBX-Bytes ausgeben (KDF/Argon2 → async). */
   serialize(): Promise<Uint8Array>;

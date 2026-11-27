@@ -1,12 +1,12 @@
 /**
  * Dropbox-Connect aus der Extension heraus: OAuth 2.0 + PKCE (ADR-002).
- * Der App-Key kommt aus der Options-Pflege (ADR-012), Fallback ist die
- * Build-Injection (ADR-007) — ein Secret gehört nie in den Auth-Flow.
+ * Der App-Key kommt aus der Options-Pflege bzw. dem Host-Deploy (ADR-012) —
+ * ein Secret gehört nie in den Auth-Flow.
  *
  * Redirect-URI: chrome.identity.getRedirectURL() liefert
- * https://<extension-id>.chromiumapp.org/ — die Extension-ID ist über das
- * öffentliche "key"-Feld im Manifest gepinnt, damit die URI in der
- * Dropbox-App-Konsole einmalig eingetragen werden kann.
+ * https://<extension-id>.chromiumapp.org/ (Firefox: …extensions.allizom.org/) — die
+ * Extension-ID ist über das öffentliche "key"-Feld im Manifest gepinnt, damit
+ * die URI in der Dropbox-App-Konsole einmalig eingetragen werden kann.
  */
 import { buildAuthUrl, exchangeCode, generatePkce } from '@kdbx-keychain/core';
 import { hasResolvedAppKey, resolvedAppKey } from './dropbox-config';
@@ -17,13 +17,8 @@ export function dropboxRedirectUri(): string {
 }
 
 export async function connectDropboxPkce(vault: Vault): Promise<void> {
-  if (typeof chrome.identity === 'undefined') {
-    throw new Error('chrome.identity nicht verfügbar');
-  }
   if (!hasResolvedAppKey()) {
-    throw new Error(
-      'Kein Dropbox App-Key — in den Einstellungen pflegen (ADR-012) oder Build mit ADR-007-Injection.',
-    );
+    throw new Error('Kein Dropbox App-Key — in den Einstellungen pflegen oder per Host-Deploy liefern.');
   }
   const pkce = await generatePkce();
   const redirectUri = dropboxRedirectUri();

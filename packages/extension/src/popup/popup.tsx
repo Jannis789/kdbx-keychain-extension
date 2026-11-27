@@ -290,7 +290,6 @@ function LockedView({ snapshot, onUnlocked }: { snapshot: Snapshot | null; onUnl
   useEffect(() => {
     prefillDone.current = callBackground<{
       b64?: string;
-      source?: string;
       name?: string;
       path?: string;
       error?: string;
@@ -872,8 +871,8 @@ function EditView({
       } else {
         const res = await callBackground<{ snapshot: Snapshot }>({
           type: 'CREATE_ENTRY',
-          // Formular liefert nur gesetzte Felder; Titel ist oben validiert.
-          fields: patch as unknown as EntryFields,
+          // Formular liefert nur gesetzte Felder; der Titel ist oben validiert.
+          fields: patch as EntryFields,
         });
         onSnapshot(res.snapshot);
       }

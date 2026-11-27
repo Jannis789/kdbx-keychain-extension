@@ -2,7 +2,6 @@
  * Message-Router: verbindet UI-Nachrichten (Popup/Options) mit dem Vault.
  * Jede Aktion mit Tresorzugriff verlängert das Auto-Lock-Fenster (touch).
  */
-import type { EntryFields } from '@kdbx-keychain/core';
 import type {
   FillResult,
   RuntimeMessage,
@@ -96,28 +95,23 @@ export function createRouter(vault: Vault): Route {
           return ok(await fillEntry(vault, message.entryId));
         case 'PREFILL_KEYFILE': {
           // ADR-010: Keyfile-Bytes aus dem Native-Host (agenix) — weiches
-          // Fallback: kein Host → leeres Objekt + Diagnose-Text → Popup.
+          // Fallback: kein Host → Diagnose-Text → Popup bietet Dateiauswahl.
           const { b64, path, error } = await fetchKeyfileViaNative();
           const name = path ? path.split('/').pop() : undefined;
           return ok(
             b64
-              ? {
-                  b64,
-                  source: 'native',
-                  ...(name ? { name } : {}),
-                  ...(path ? { path } : {}),
-                }
+              ? { b64, ...(name ? { name } : {}), ...(path ? { path } : {}) }
               : { ...(error ? { error } : {}) },
           );
         }
         case 'CREATE_ENTRY': {
-          const entry = await vault.createEntry(message.fields as EntryFields);
+          const entry = await vault.createEntry(message.fields);
           return ok({ entry, snapshot: await vault.snapshot() });
         }
         case 'UPDATE_ENTRY': {
           const entry = await vault.updateEntry(
             message.entryId,
-            message.patch as Partial<EntryFields>,
+            message.patch,
             message.clearTotp === true,
           );
           return ok({ entry, snapshot: await vault.snapshot() });

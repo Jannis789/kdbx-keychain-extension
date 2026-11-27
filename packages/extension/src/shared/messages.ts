@@ -65,7 +65,3 @@ export interface RuntimeResponse<T = unknown> {
   data?: T;
   error?: string;
 }
-
-/** Interne Offscreen-Nachrichten (Clipboard, ADR-009) — nie durch den Router. */
-export type OffscreenMessage =
-  | { type: 'CLIPBOARD_WRITE'; text: string };

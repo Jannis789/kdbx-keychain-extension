@@ -77,11 +77,12 @@ const appSecretIn = $<HTMLInputElement>('set-appsecret');
 $('btn-app').addEventListener('click', async () => {
   try {
     // Leere Felder = „nicht gesetzt" → Host-Deploy (managed) greift wieder.
-    await callBackground({
+    const res = await callBackground<{ snapshot: Snapshot }>({
       type: 'SET_DROPBOX_APP',
       appKey: appKeyIn.value.trim(),
       appSecret: appSecretIn.value.trim(),
     });
+    applySnapshot(res.snapshot);
     toast('Dropbox-Credentials übernommen');
   } catch (e) {
     toast(e instanceof Error ? e.message : String(e));
@@ -111,17 +112,8 @@ $('btn-save').addEventListener('click', async () => {
     const app = await callBackground<{ appKey: string; appSecret: string }>({ type: 'GET_DROPBOX_APP' });
     appKeyIn.value = app.appKey;
     appSecretIn.value = app.appSecret;
-    const uri = chrome.identity?.getRedirectURL?.() ?? '';
-    $('redirect-uri').textContent = uri || '(Chrome-Redirect-URI nicht verfügbar)';
-    // Firefox unterstützt chrome.identity (launchWebAuthFlow) gleichermaßen;
-    // nur die Redirect-URI unterscheidet sich (extensions.allizom.org statt
-    // chromiumapp.org) und muss zusätzlich in der Dropbox-Konsole registriert
-    // werden. Ohne identity-API (Alt-Builds) bleibt der Token-Import.
-    if (typeof chrome.identity?.launchWebAuthFlow !== 'function') {
-      ($('btn-connect') as HTMLButtonElement).hidden = true;
-      $('redirect-uri').textContent =
-        '(identity-API nicht verfügbar — Token manuell importieren)';
-    }
+    const uri = chrome.identity.getRedirectURL();
+    $('redirect-uri').textContent = uri;
   } catch (e) {
     toast(e instanceof Error ? e.message : String(e));
   }

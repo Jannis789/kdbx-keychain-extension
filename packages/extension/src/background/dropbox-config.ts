@@ -1,8 +1,8 @@
 /**
  * Dropbox-App-Credentials zur Laufzeit (ADR-012): die Options-Seite pflegt
- * App-Key/-Secret in chrome.storage.local, der Host kann dieselben Werte plus
- * refreshToken/remotePath per chrome.storage.managed liefern. Ein Cache
- * bedient die synchrone CloudFactory — geladen, bevor die Vault-Init läuft
+ * App-Key/-Secret in chrome.storage.local, der Host liefert dieselben Werte
+ * plus refreshToken/remotePath per chrome.storage.managed. Ein Cache bedient
+ * die synchrone CloudFactory — geladen, bevor die Vault-Init läuft
  * (VaultDeps.ready).
  *
  * Vertrauensgrenze (bewusst schmal): beide Quellen schreiben nur wir selbst —
@@ -35,19 +35,6 @@ const EMPTY_MANAGED: ManagedConfig = { ...EMPTY_APP, refreshToken: '', remotePat
 let cache: DropboxAppConfig = EMPTY_APP;
 let managed: ManagedConfig = EMPTY_MANAGED;
 
-/** Für den Lade-Fluss und Tests: Cache direkt setzen. */
-export function setDropboxAppConfigCache(next: DropboxAppConfig): void {
-  cache = next;
-}
-
-export function setDropboxManagedConfigCache(next: ManagedConfig): void {
-  managed = next;
-}
-
-export function dropboxManagedConfig(): ManagedConfig {
-  return managed;
-}
-
 export async function loadDropboxAppConfig(): Promise<void> {
   // Host-Level zuerst (nix/Enterprise-Policy) — kein Managed-Deploy ist ein
   // legitimer Zustand (ExtensionError des Browsers), kein Fehler.
@@ -65,7 +52,6 @@ export async function loadDropboxAppConfig(): Promise<void> {
   cache = stored ?? EMPTY_APP;
 }
 
-/** Einziger Schreiber des Options-Stands: ganzer Satz rein, leer = „nicht gesetzt". */
 export async function saveDropboxAppConfig(next: DropboxAppConfig): Promise<void> {
   cache = next;
   await chrome.storage.local.set({ [STORAGE_KEY]: next });

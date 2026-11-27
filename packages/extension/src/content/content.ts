@@ -41,21 +41,20 @@ function isVisible(el: HTMLInputElement): boolean {
   return el.offsetParent !== null || el.getClientRects().length > 0;
 }
 
+const KIND: Record<string, FieldDescriptor['kind']> = {
+  password: 'password',
+  email: 'email',
+  tel: 'tel',
+  text: 'text',
+  search: 'text',
+  number: 'text',
+};
+
 function describe(el: HTMLInputElement): FieldDescriptor | null {
   if (!isVisible(el)) return null;
   const rawType = (el.getAttribute('type') ?? 'text').toLowerCase();
-  const kind =
-    rawType === 'password'
-      ? 'password'
-      : rawType === 'email'
-        ? 'email'
-        : rawType === 'tel'
-          ? 'tel'
-          : rawType === '' || rawType === 'text' || rawType === 'search' || rawType === 'number'
-            ? 'text'
-            : 'other';
   return {
-    kind,
+    kind: KIND[rawType] ?? 'other',
     visible: true,
     autocomplete: el.getAttribute('autocomplete') ?? undefined,
     id: el.id || undefined,
@@ -76,37 +75,25 @@ function setNativeValue(el: HTMLInputElement, value: string): boolean {
 }
 
 function applyFill(payload: FillDomPayload): FillResult {
-  const inputs = Array.from(document.querySelectorAll('input')) as HTMLInputElement[];
   const descriptors: FieldDescriptor[] = [];
-  const elementOf = new Map<FieldDescriptor, HTMLInputElement>();
-  for (const input of inputs) {
+  const elements: HTMLInputElement[] = [];
+  for (const input of Array.from(document.querySelectorAll('input')) as HTMLInputElement[]) {
     const d = describe(input);
-    if (d) {
-      descriptors.push(d);
-      elementOf.set(d, input);
-    }
+    if (!d) continue;
+    descriptors.push(d);
+    elements.push(input);
   }
   const pick = pickLoginFields(descriptors);
 
-  let okUser = false;
-  let okPw = false;
-  let okOtp = false;
+  const fill = (index: number | null, value: string | undefined): boolean => {
+    if (index === null || !value) return false;
+    const el = elements[index];
+    return el ? setNativeValue(el, value) : false;
+  };
 
-  if (pick.usernameIndex !== null && payload.username) {
-    const d = descriptors[pick.usernameIndex];
-    const el = d ? elementOf.get(d) : undefined;
-    okUser = el ? setNativeValue(el, payload.username) : false;
-  }
-  if (pick.passwordIndex !== null && payload.password) {
-    const d = descriptors[pick.passwordIndex];
-    const el = d ? elementOf.get(d) : undefined;
-    okPw = el ? setNativeValue(el, payload.password) : false;
-  }
-  if (pick.otpIndex !== null && payload.totp) {
-    const d = descriptors[pick.otpIndex];
-    const el = d ? elementOf.get(d) : undefined;
-    okOtp = el ? setNativeValue(el, payload.totp) : false;
-  }
-
-  return { username: okUser, password: okPw, totp: okOtp };
+  return {
+    username: fill(pick.usernameIndex, payload.username),
+    password: fill(pick.passwordIndex, payload.password),
+    totp: fill(pick.otpIndex, payload.totp),
+  };
 }

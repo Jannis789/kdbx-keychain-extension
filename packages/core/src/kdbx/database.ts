@@ -18,6 +18,7 @@ import type {
   CustomField,
   DatabasePort,
   EntryFields,
+  EntryPatch,
   KeychainEntry,
   TotpConfig,
   UnlockOptions,
@@ -374,7 +375,7 @@ export class KdbxDatabase implements UnlockedDatabase {
     this.touch(entry);
   }
 
-  update(id: string, patch: Partial<EntryFields>): KeychainEntry {
+  update(id: string, patch: EntryPatch): KeychainEntry {
     const entry = this.byId.get(id);
     const group = this.groupOf.get(id);
     if (!entry || !group) throw new Error(`Eintrag nicht gefunden: ${id}`);

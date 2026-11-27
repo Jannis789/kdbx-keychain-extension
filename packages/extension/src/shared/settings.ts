@@ -1,6 +1,5 @@
 /**
- * Nutzereinstellungen (Phase 3): Auto-Lock, Dropbox-Pfad. Bewusst pure —
- * Dropbox-Pfad. Bewusst pure — Normalisierung testbar ohne Browser.
+ * Nutzereinstellungen: Auto-Lock, Dropbox-Pfad. Pure — ohne Browser testbar.
  */
 
 export interface Settings {
@@ -17,26 +16,23 @@ export const DEFAULT_SETTINGS: Settings = {
   remotePath: '/kdbx-keychain/test.kdbx',
 };
 
-function clampInt(value: unknown, min: number, max: number, fallback: number): number {
-  const n = typeof value === 'number' ? Math.round(value) : Number.NaN;
-  if (!Number.isFinite(n)) return fallback;
-  return Math.min(max, Math.max(min, n));
-}
-
-/** Defensiv: beliebige (teils korrupte) Storage-Fragmente → gültiges Settings. */
-export function normalizeSettings(input: Partial<Settings> | null | undefined): Settings {
-  const src = input ?? {};
-  let remotePath =
-    typeof src.remotePath === 'string' && src.remotePath.trim() !== ''
-      ? src.remotePath.trim()
-      : DEFAULT_SETTINGS.remotePath;
-  if (!remotePath.startsWith('/')) remotePath = '/' + remotePath;
-  return {
-    autoLockMinutes: clampInt(src.autoLockMinutes, 0, 1440, DEFAULT_SETTINGS.autoLockMinutes),
-    remotePath,
-  };
-}
-
+/**
+ * Patch anwenden, sonst nichts: ungültige Werte werden abgelehnt, nicht
+ * zurechtgebogen (die Options-Seite zeigt die Meldung als Toast).
+ */
 export function mergeSettings(current: Settings, patch: Partial<Settings>): Settings {
-  return normalizeSettings({ ...current, ...patch });
+  const next: Settings = { ...current, ...patch };
+  if (
+    !Number.isInteger(next.autoLockMinutes) ||
+    next.autoLockMinutes < 0 ||
+    next.autoLockMinutes > 1440
+  ) {
+    throw new Error(
+      `Auto-Lock: ganze Minuten 0–1440 erwartet, kam: ${String(next.autoLockMinutes)}`,
+    );
+  }
+  if (typeof next.remotePath !== 'string' || !next.remotePath.startsWith('/')) {
+    throw new Error(`Dropbox-Pfad muss im Root beginnen ("/…"), kam: "${String(next.remotePath)}"`);
+  }
+  return next;
 }
