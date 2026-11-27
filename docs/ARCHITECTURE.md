@@ -162,6 +162,14 @@ umfasst appKey/appSecret/refreshToken/remotePath. Firefox liest
 `~/.mozilla/managed-storage/<id>.json` (nixOS: `home.activation` schreibt es
 lazy aus der agenix-Env — pro Key nur ergänzen, nie überschreiben), Chrome
 bekäme das `3rdparty`-Policy-Äquivalent (`/etc/opt/chrome/policies`).
+
+*Format-Falle (empirisch, FF 161):* Die Datei ist **kein** reines Daten-JSON,
+sondern ein Native-Manifest (`toolkit/modules/NativeManifests.sys.mjs`):
+`{ "name": "<extension-id>", "description": "…", "type": "storage",
+"data": { … } }`. `name` muss exakt der Extension-ID entsprechen, `type`
+`"storage"` sein — sonst wird die Datei **still** verworfen und
+`storage.managed` bleibt leer (kein Fehler im Log, wenn die Datei nicht
+gefunden wird; die Suche läuft über `XREUserNativeManifests`).
 Vault-Seed (`VaultDeps.seed`) bezieht refreshToken/remotePath daraus und
 wird erst nach dem Ladeversprechen (`VaultDeps.ready`) ausgewertet.
 
